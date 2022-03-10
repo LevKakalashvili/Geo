@@ -2,3 +2,5 @@
 /Lib/
 /Scripts/
 pyvenv.cfg
+/Sync_app/privatedata/
+/.idea/
