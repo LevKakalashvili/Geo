@@ -79,16 +79,13 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'geo',
-        'USER': 'root',
-        'PASSWORD': '340354',
-        'HOST': 'localhost',   # Or an IP Address that your DB is hosted on
-        'PORT': '3306',
+        # Настройки соединения логин, пароль берем из файла my.ini
+        # https://github.com/LevKakalashvili/gb_databases_intoduction/blob/main/Task_1/Task_1_1.docx
+        'OPTIONS': {
+            # 'read_default_file': '/path/to/my.cnf',
+            'read_default_file': 'C:\\ProgramData\\MySQL\\MySQL Server 8.0\\my.ini',
+            },
     }
-
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.sqlite3',
-    #     'NAME': BASE_DIR / 'db.sqlite3',
-    # }
 }
 
 
