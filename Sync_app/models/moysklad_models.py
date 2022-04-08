@@ -83,7 +83,7 @@ class Good(models.Model):
 class Stock(models.Model):
     """Класс описывает модель остатка по товару."""
 
-    # Количество товара на складе. может отсутсвовать, если товар - комплект
+    # Количество товара на складе. Может отсутсвовать, если товар - комплект
     quantity = models.PositiveSmallIntegerField(help_text='Остаток товара на складе')
     # UUID товара
     uuid = models.OneToOneField(Good,
