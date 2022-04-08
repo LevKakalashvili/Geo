@@ -45,9 +45,6 @@ class GoodTuple(NamedTuple):
     is_cider: bool = False
     is_beer: bool = False
 
-
-
-
 class GoodsType(Enum):
     """Перечисление для определения, какой тип товаров необходимо получить.
 
