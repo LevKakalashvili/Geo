@@ -45,7 +45,7 @@ class Good(models.Model):
     is_cider = models.BooleanField(help_text='Признак розливного пива')
 
     @staticmethod
-    def create_and_save_objects_from_list(list_ms_goods: List[MoySkladGood]):
+    def save_objects_to_storage(list_ms_goods: List[MoySkladGood]):
         """Метод сохраняет объекты, созданные на основе списка list_ms_goods в БД."""
         if list_ms_goods:
             for ms_good in list_ms_goods:
