@@ -1,18 +1,28 @@
 import os
 import django
 
+from Sync_app.models.konturmarket_models import Good as db_km_good
+from Sync_app.models.moysklad_models import Good as db_ms_good
+
+from Sync_app import kmarket
 from Sync_app import ms
 
+from Sync_app.konturmarket.konturmarket_class_lib import Good as km_Good
 from Sync_app.moysklad.moysklad_class_lib import Good as ms_Good
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "Geo.settings")
 django.setup()
 
-from Sync_app.models import Good as db_Good
 
 if __name__ == '__main__':
 
-    # Получаем ассортимент
-    goods = ms.get_assortment()
-    # Обновляем БД объектами ассортимента
-    db_Good.create_and_save_objects_from_list(list_ms_goods=goods)
+    # Получаем ассортимент из МойСклад
+    ms_goods = ms.get_assortment()
+    # Обновляем БД объектами ассортимента МойСклад
+    db_ms_good.save_objects_to_storage(list_ms_goods=ms_goods)
+
+    # Получаем ассортимент КонтурМаркет
+    km_goods = kmarket.get_egais_assortment()
+    # Обновляем БД объектами справочника Контур.Маркет
+    db_Good.save_objects_to_storage(list_km_goods=km_goods)
+
