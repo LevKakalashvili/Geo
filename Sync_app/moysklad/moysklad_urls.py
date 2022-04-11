@@ -24,9 +24,9 @@ class UrlType(Enum):
     assortment - для получения ассортимента товаров
     """
 
-    token = 1
-    retail_demand = 2
-    assortment = 3
+    TOKEN = 1
+    RETAIL_DEMAND = 2
+    ASSORTMENT = 3
 
 
 class Url(NamedTuple):
@@ -74,12 +74,12 @@ def get_url(_type: UrlType, start_period: datetime = datetime.today(), end_perio
     url = Url('', {})
 
     # если нужен url для запроса токен
-    if _type == UrlType.token:
+    if _type == UrlType.TOKEN:
         # формируем url для запроса токена
         url = Url(urljoin(JSON_URL, 'security/token'), {})
 
     # если нужен url для запроса продаж
-    elif _type == UrlType.retail_demand:
+    elif _type == UrlType.RETAIL_DEMAND:
         # если конец периода не указан входным параметром, считаем, что запросили продажи за вчера
         if end_period is None:
             end_period = start_period
@@ -102,7 +102,7 @@ def get_url(_type: UrlType, start_period: datetime = datetime.today(), end_perio
             'limit': '100'}
         url = Url(urljoin(JSON_URL, 'entity/retaildemand'), request_filter)
     # # если нужен url для запроса ассортимента
-    elif _type == UrlType.assortment:
+    elif _type == UrlType.ASSORTMENT:
         request_filter: dict[str, Any] = {
             'filter': [
                 f'productFolder={JSON_URL}entity/productfolder/{BEER_FOLDER_ID}'],

@@ -13,10 +13,18 @@ session = requests.Session()
 
 
 class Brewery(BaseModel):
-    """Клас описывает структуру компании производителя, продукции в соответствии с терминами ЕГАИС. Словарь
+    """Клаcс описывает структуру компании производителя, продукции в соответствии с терминами ЕГАИС. Словарь
     'producer' в JSON представлении."""
 
-    name: str = Field(alias='shortName')
+    # Короткое наименование производителя
+    short_name: str = Field(alias='shortName')
+    # Полное наименование производителя
+    full_name: str = Field(alias='fullName')
+    # ИНН производителя
+    inn: Optional[str]
+    # Уникальный ЕГАИС идентификатор производителя
+    fsrar_id: str = Field(alias='fsrarid')
+
 
 
 class GoodEGAIS(BaseModel):
@@ -36,14 +44,17 @@ class GoodEGAIS(BaseModel):
     # Описание производителя
     brewery: Brewery = Field(alias='producer')
 
+    # Количество товара на остатках ЕГАИС
+    quantity: float
+
     def to_tuple(self) -> Tuple[str, str, str]:
         """Метод возвращает кортеж вида (ЕГАИС_НАИМЕНОВАНИЕ, ЕГАИС_КОД)."""
-        return self.name, self.alco_code, self.brewery.name
+        return self.name, self.alco_code, self.brewery.short_name
 
     def get_description(self):
         """Метод возвращает кортеж с наименованием товара."""
         return (
-            f'Пивоварня: {self.brewery.name}  '
+            f'Пивоварня: {self.brewery.short_name}  '
             f'Наименование: {self.name}  '
             f'Код: {self.alco_code}  '
         )
@@ -61,7 +72,7 @@ class KonturMarket:
         """Метод возвращает список инстансов GoodEGAIS, полученных из сервиса."""
 
         goods_list: List[GoodEGAIS] = []
-        url: Url = get_url(UrlType.egais_assortment)
+        url: Url = get_url(UrlType.EGAIS_ASSORTMENT)
         response = session.get(url.url)
 
         goods = dict(response.json()).get('list')
@@ -78,14 +89,14 @@ class KonturMarket:
         return []
 
     def login(self) -> bool:
-        """Метод для логина в сервиса Контур.Маркет."""
+        """Метод для логина в сервисе Контур.Маркет."""
         auth_data = {
             'Login': km_pvdata.USER,
             'Password': km_pvdata.PASSWORD,
             'Remember': False,
         }
         # Пытаемся залогиниться на сайте
-        url: Url = get_url(UrlType.login)
+        url: Url = get_url(UrlType.LOGIN)
         response = session.post(
             url=url.url,
             data=json.dumps(auth_data),

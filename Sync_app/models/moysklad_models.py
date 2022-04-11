@@ -6,7 +6,7 @@ from django.db import models
 from Sync_app.moysklad.moysklad_class_lib import Good as MoySkladGood
 
 
-class Good(models.Model):
+class MoySkladDBGood(models.Model):
     """Класс описывает модель для работы с товарами из сервиса МойСклад."""
 
     # UUID товара
@@ -55,7 +55,7 @@ class Good(models.Model):
                 if ms_good.quantity is not None:
                     parced_name = ms_good.parse_name
                     # Заполняем товар
-                    good = Good(
+                    good = MoySkladDBGood(
                         uuid=ms_good.id,
                         parent_uuid=ms_good.parent_id,
                         full_name=ms_good.name,
@@ -74,19 +74,19 @@ class Good(models.Model):
                     )
                     good.save()
                     # Заполняем остатки
-                    stoks = Stock(
+                    stoks = MoySkladDBStock(
                         uuid=good,
                         quantity=ms_good.quantity)
                     stoks.save()
 
 
-class Stock(models.Model):
+class MoySkladDBStock(models.Model):
     """Класс описывает модель остатка по товару."""
 
     # Количество товара на складе. Может отсутсвовать, если товар - комплект
     quantity = models.PositiveSmallIntegerField(help_text='Остаток товара на складе')
     # UUID товара
-    uuid = models.OneToOneField(Good,
+    uuid = models.OneToOneField(MoySkladDBGood,
                                 on_delete=models.CASCADE,
                                 primary_key=True,
                                 db_column='uuid',

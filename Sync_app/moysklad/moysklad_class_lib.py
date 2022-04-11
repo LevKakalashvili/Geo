@@ -289,7 +289,7 @@ class MoySklad:
         if request_new:
             # logger.debug('Пытаемся получить токен у MoySklad')
             # Получаем url запроса
-            url: ms_urls.Url = ms_urls.get_url(ms_urls.UrlType.token)
+            url: ms_urls.Url = ms_urls.get_url(ms_urls.UrlType.TOKEN)
             # Получаем заголовок запроса
             header: Dict[str, Any] = ms_urls.get_headers(self._token)
 
@@ -318,7 +318,7 @@ class MoySklad:
         goods: List[Good] = []
         while need_request:
             # Получаем url для отправки запроса в сервис
-            url: ms_urls.Url = ms_urls.get_url(ms_urls.UrlType.assortment, offset=counter * 1000)
+            url: ms_urls.Url = ms_urls.get_url(ms_urls.UrlType.ASSORTMENT, offset=counter * 1000)
 
             response = requests.get(url.url, url.request_filter, headers=header)
             if not response.ok:

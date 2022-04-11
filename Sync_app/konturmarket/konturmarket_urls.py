@@ -13,8 +13,8 @@ class UrlType(Enum):
     egais_assortment - справочник товарв (ЕГАИС наименований)
     """
 
-    login = 1
-    egais_assortment = 2
+    LOGIN = 1
+    EGAIS_ASSORTMENT = 2
 
 
 class Url(NamedTuple):
@@ -39,10 +39,10 @@ def get_url(url_type: UrlType) -> Url:
     :param url_type: UrlType.login - url для авторизации в сервисе, UrlType.egais_assortment - url для списка ЕГАИС наименований.
     :returns: Возвращается объект Url
     """
-    if url_type == UrlType.login:
+    if url_type == UrlType.LOGIN:
         # Возвращаем ссылку на форму для авторизации в сервисе
         url = Url(url=AUTH_URL)
-    elif url_type == UrlType.egais_assortment:
+    elif url_type == UrlType.EGAIS_ASSORTMENT:
         # Возвращаем ссылку на раздел в Товары/Пиво в сервисе Конутр.Маркет
         url = Url(url=EGAIS_ASSORTMENT_URL)
     return url
