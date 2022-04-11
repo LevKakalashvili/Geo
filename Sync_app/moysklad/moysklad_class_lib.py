@@ -1,12 +1,7 @@
 """В модуле хранятся описание классов."""
-import datetime
-import logging
-import os
-from collections import OrderedDict
 from dataclasses import dataclass
-from decimal import Decimal
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Union, NamedTuple
+from typing import Any, Dict, List, Optional, Union, NamedTuple
 
 import Sync_app.privatedata.moysklad_privatedata as ms_pvdata
 import requests
@@ -124,6 +119,8 @@ class Good(BaseModel):
         og: float = 0.0
         abv: float = 0.0
         ibu: int = 0
+        is_modification: bool = False
+        additional_info: str = ''
 
         # Если товар - модификация
         # Alaska - Стаутский советник (Stout - Imperial / Double Milk. OG 16,5%, ABV 10,5%) (Банка 0,33)
@@ -133,9 +130,10 @@ class Good(BaseModel):
         try:
             if self.modifications:
                 full_name = full_name.replace(f' ({self.modifications[0].value})', '')
-                # Устанавливаем флаг в True, т.к. при проверке на алко (ниже по коду) модификации тоже нужно обработать и выставить флаги пиво, сидр, безалко
+                # Устанавливаем флаг в True, т.к. при проверке на алко (ниже по коду)
+                # модификации тоже нужно обработать и выставить флаги пиво, сидр, безалко
                 is_modification = True
-            # Самы рабочий варинат, но не красивый в использовании.
+            # Самый рабочий вариант, но не красивый в использовании.
             # Т.к. не все модификации товара заведены, как модификации просто удаляем из названия мусор.
             # 'Barista Chocolate Quad (Belgian Quadrupel. ABV 11%) (0,75)'
             full_name = full_name.replace(' (0,75)', '').replace(' (0,33)', '')
@@ -222,9 +220,9 @@ class Good(BaseModel):
             try:
                 for info in additional_info:
                     if info.lower().find('og') != -1:
-                        og = float(info.lower().replace('og ', '').replace(',','.').replace('%', ''))
+                        og = float(info.lower().replace('og ', '').replace(',', '.').replace('%', ''))
                     elif info.lower().find('abv') != -1:
-                        abv = float(info.lower().replace('abv ', '').replace(',','.').replace('%', ''))
+                        abv = float(info.lower().replace('abv ', '').replace(',', '.').replace('%', ''))
                     elif info.lower().find('ibu') != -1:
                         ibu = int(info.lower().replace('ibu ', ''))
             except Exception:
