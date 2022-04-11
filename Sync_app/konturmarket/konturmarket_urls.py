@@ -22,7 +22,7 @@ class Url(NamedTuple):
 
     url: str  # Url для запроса в сервис.
 
-    # Словрь cookies для передачи в запросе к сервису Контур.Маркет
+    # Словарь cookies для передачи в запросе к сервису Контур.Маркет
     cookies: Dict[str, str] = {
         'AntiForgery': '78bc4821-5d13-4744-a103-1a762614ec22'
     }
@@ -36,9 +36,13 @@ class Url(NamedTuple):
 
 def get_url(url_type: UrlType) -> Url:
     """Метод для получения url.
-    :param url_type: UrlType.login - url для авторизации в сервисе, UrlType.egais_assortment - url для списка ЕГАИС наименований.
+    :param url_type: UrlType.login - url для авторизации в сервисе, UrlType.egais_assortment - url для списка ЕГАИС
+    наименований.
     :returns: Возвращается объект Url
     """
+
+    url: Url
+
     if url_type == UrlType.LOGIN:
         # Возвращаем ссылку на форму для авторизации в сервисе
         url = Url(url=AUTH_URL)
