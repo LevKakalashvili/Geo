@@ -1,3 +1,4 @@
 Django
 pydantic
 requests
+mysqlclient
