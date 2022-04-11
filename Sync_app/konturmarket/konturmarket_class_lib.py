@@ -13,22 +13,21 @@ session = requests.Session()
 
 
 class Brewery(BaseModel):
-    """Клаcс описывает структуру компании производителя, продукции в соответствии с терминами ЕГАИС. Словарь
+    """Класс описывает структуру компании производителя, продукции в соответствии с терминами ЕГАИС. Словарь
     'producer' в JSON представлении."""
 
     # Короткое наименование производителя
     short_name: str = Field(alias='shortName')
     # Полное наименование производителя
-    full_name: str = Field(alias='fullName')
+    full_name: str = Field(alias='name')
     # ИНН производителя
     inn: Optional[str]
     # Уникальный ЕГАИС идентификатор производителя
-    fsrar_id: str = Field(alias='fsrarid')
-
+    fsrar_id: str = Field(alias='fsrarId')
 
 
 class GoodEGAIS(BaseModel):
-    """Клас описывает структуру товара, продукции в соответствии с терминами ЕГАИС.
+    """Класс описывает структуру товара, продукции в соответствии с терминами ЕГАИС.
     Словарь 'productInfo' в JSON представлении."""
 
     # ЕГАИС наименование
@@ -38,14 +37,12 @@ class GoodEGAIS(BaseModel):
     # коде меньше 19-ти, то вперед дописываются нули. Это при строковом представлении
     alco_code: str = Field(alias='egaisCode')
 
-    # Емкость тары. Необязательный параметр. Отсутствие этого параметра говорит о том, что товар разливной
+    # Емкость тары. Не обязательный параметр. Отсутствие этого параметра говорит о том, что товар разливной
     capacity: Optional[float] = None
 
     # Описание производителя
     brewery: Brewery = Field(alias='producer')
 
-    # Количество товара на остатках ЕГАИС
-    quantity: float
 
     def to_tuple(self) -> Tuple[str, str, str]:
         """Метод возвращает кортеж вида (ЕГАИС_НАИМЕНОВАНИЕ, ЕГАИС_КОД)."""
@@ -58,6 +55,16 @@ class GoodEGAIS(BaseModel):
             f'Наименование: {self.name}  '
             f'Код: {self.alco_code}  '
         )
+
+class StockEGAIS(BaseModel):
+    """Класс описывает структуру остатка товара, продукции в соответствии с терминами ЕГАИС."""
+
+    # Количество товара на остатках ЕГАИС.
+    quantity: float
+
+    # Структура товара ЕГАИС
+    good: GoodEGAIS = Field(alias='productInfo')
+
 
 
 @dataclass()
@@ -81,10 +88,10 @@ class KonturMarket:
             # Проходим по всему списку товаров, наименований.
             for good in goods:
                 # Получаем словарь с информацией о товаре
-                goods_list.append(GoodEGAIS(**good['productInfo']))
+                goods_list.append(StockEGAIS(**good))
 
             # Сортировка по названию пивоварни
-            goods_list = sorted(goods_list, key=lambda element: element.brewery.name)
+            goods_list = sorted(goods_list, key=lambda element: element.good.brewery.short_name)
             return goods_list
         return []
 
