@@ -89,5 +89,4 @@ class MoySkladDBStock(models.Model):
     uuid = models.OneToOneField(MoySkladDBGood,
                                 on_delete=models.CASCADE,
                                 primary_key=True,
-                                db_column='uuid',
                                 help_text='Уникальный идентификатор товара')
