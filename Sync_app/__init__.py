@@ -1,4 +1,4 @@
-"""Инициализация приложени."""
+"""Инициализация приложении."""
 from Sync_app.konturmarket.konturmarket_class_lib import KonturMarket
 from Sync_app.moysklad.moysklad_class_lib import MoySklad
 
