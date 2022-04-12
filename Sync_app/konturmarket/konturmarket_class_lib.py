@@ -59,8 +59,11 @@ class GoodEGAIS(BaseModel):
 class StockEGAIS(BaseModel):
     """Класс описывает структуру остатка товара, продукции в соответствии с терминами ЕГАИС."""
 
-    # Количество товара на остатках ЕГАИС.
-    quantity: float
+    # Количество товара на остатках ЕГАИС в 1ом регистре.
+    quantity_1: Optional[float] = Field(alias='quantity')
+
+    # Количество товара на остатках ЕГАИС в 2ом регистре.
+    quantity_2: Optional[float] = Field(alias='shopQuantity')
 
     # Структура товара ЕГАИС
     good: GoodEGAIS = Field(alias='productInfo')
