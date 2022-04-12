@@ -16,9 +16,9 @@ from Sync_app.models.moysklad_models import MoySkladDBGood as db_ms_good
 if __name__ == '__main__':
 
     # Получаем ассортимент из МойСклад
-    # ms_goods = ms.get_assortment()
+    ms_goods = ms.get_assortment()
     # Обновляем БД объектами ассортимента МойСклад
-    # db_ms_good.save_objects_to_storage(list_ms_goods=ms_goods)
+    db_ms_good.save_objects_to_storage(list_ms_goods=ms_goods)
 
     # Получаем ассортимент КонтурМаркет
     km_goods = kmarket.get_egais_assortment()
