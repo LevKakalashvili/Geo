@@ -16,11 +16,16 @@ class KonturMarketDBProducer(models.Model):
                                 help_text='Уникальный ЕГАИС идентификатор производителя')
 
     # ИНН. Для зарубежных производителей может быть пустым
-    inn = models.CharField(max_length=12, help_text='ИНН производителя', null=True)
+    inn = models.CharField(max_length=12,
+                           help_text='ИНН производителя',
+                           null=True)
 
-    short_name = models.CharField(max_length=200, help_text='Короткое наименование производителя')
+    short_name = models.CharField(max_length=200,
+                                  help_text='Короткое наименование производителя')
 
-    full_name = models.CharField(max_length=300, unique=True, help_text='Полное наименование производителя')
+    full_name = models.CharField(max_length=255,
+                                 # unique=True,
+                                 help_text='Полное наименование производителя')
 
 
 class KonturMarketDBGood(models.Model):
@@ -34,7 +39,9 @@ class KonturMarketDBGood(models.Model):
                                   help_text='Код алкогольной продукции (код АП) в ЕГАИС')
 
     # ЕГАИС наименование
-    full_name = models.CharField(max_length=200, unique=True, help_text='Полное ЕГАИС наименование товара')
+    full_name = models.CharField(max_length=200,
+                                 unique=True,
+                                 help_text='Полное ЕГАИС наименование товара')
 
     # Внешний ключ на модель, таблицу производителя
     fsrar_id = models.ForeignKey(KonturMarketDBProducer,
@@ -58,19 +65,23 @@ class KonturMarketDBGood(models.Model):
                                           fsrar_id=producer
                                           )
 
-                stock = KonturMarketDBStock(quantity=km_good.quantity,
+                stock = KonturMarketDBStock(quantity=km_good.quantity_2,
                                             egais_code=good)
-                producer.save()
-                good.save()
-                stock.save()
-        pass
+                try:
+                    producer.save()
+                    good.save()
+                    stock.save()
+                except Exception:
+                    a = 1
 
 
 class KonturMarketDBStock(models.Model):
     """Класс описывает модель остатка по товару в системе ЕГАИС."""
 
     # Количество товара на складе
-    quantity = models.PositiveSmallIntegerField(help_text='Остаток товара на остатках в ЕГАИС')
+    quantity = models.PositiveSmallIntegerField(help_text='Остаток товара на остатках в ЕГАИС на 2ом регистре',
+                                                null = True
+                                                )
 
     # Код алкогольной продукции
     egais_code = models.OneToOneField(KonturMarketDBGood,
