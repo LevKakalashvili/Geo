@@ -124,109 +124,91 @@ class Good(BaseModel):
 
         # Если товар - модификация
         # Alaska - Стаутский советник (Stout - Imperial / Double Milk. OG 16,5%, ABV 10,5%) (Банка 0,33)
-        if self.name.find('Василеостровская - Сидр (Cider. ABV 4,7%) (Бутылка 0,33)') != -1:
-            a = 1
 
-        try:
-            if self.modifications:
-                full_name = full_name.replace(f' ({self.modifications[0].value})', '')
-                # Устанавливаем флаг в True, т.к. при проверке на алко (ниже по коду)
-                # модификации тоже нужно обработать и выставить флаги пиво, сидр, безалко
-                is_modification = True
-            # Самый рабочий вариант, но не красивый в использовании.
-            # Т.к. не все модификации товара заведены, как модификации просто удаляем из названия мусор.
-            # 'Barista Chocolate Quad (Belgian Quadrupel. ABV 11%) (0,75)'
-            full_name = full_name.replace(' (0,75)', '').replace(' (0,33)', '')
-        except Exception:
-            a = 1
+        if self.modifications:
+            full_name = full_name.replace(f' ({self.modifications[0].value})', '')
+            # Устанавливаем флаг в True, т.к. при проверке на алко (ниже по коду)
+            # модификации тоже нужно обработать и выставить флаги пиво, сидр, безалко
+            is_modification = True
+        # Самый рабочий вариант, но не красивый в использовании.
+        # Т.к. не все модификации товара заведены, как модификации просто удаляем из названия мусор.
+        # 'Barista Chocolate Quad (Belgian Quadrupel. ABV 11%) (0,75)'
+        full_name = full_name.replace(' (0,75)', '').replace(' (0,33)', '')
 
-        try:
-            # Если в сервисе у товара определен аттрибут "Розлив", то индекс аттрибута "Алкогольная продукция",
-            # в массиве аттрибутов будет 1, если не определен, то индекс будет 0. это происходит т.к. аттрибут
-            # "Алкогольная продукция", является обязательным для всех товаров
-            #
-            # Признак алкогольной продукции
-            # дополнительное поле "Алкогольная продукция" в массиве ['attributes'] - элемент с индексом 1
-            # True - чек-бокс установлен, False - не установлен
-            # проверяем, что аттрибут "Алкогольная продукция" == True
-            # if hasattr(self, 'attributes'):
-            if (self.attributes is not None) or is_modification:
-                # Если модификация, то принимаем, что продукт алкогольный
-                if is_modification:
-                    is_alco = True
-                else:
-                    # Если есть аттрибут алкогольной продукции
-                    if len(self.attributes) == 1:
-                        is_alco = self.attributes[0].value
-                    # Если у товара определен аттрибут розлива
-                    elif len(self.attributes) == 2:
-                        is_draft = True if self.attributes[0].value.lower() == 'да' else False
-                        is_alco = self.attributes[1].value
-            # Если пиво розливное, нужно убрать (0,5) из наименования
-            if is_draft:
-                brewery_and_name = full_name.replace(' (0,5)', '')
-        except Exception:
-            a = 1
-
-        try:
-            # Получаем название пивоварни
-            # Варианты наименований:
-            # вариант 1. 4Пивовара - Black Jesus White Pepper (Porter - American. OG 17, ABV 6.7%, IBU 69)
-            # вариант 2. 4Пивовара - Ether [Melon] (Sour - Farmhouse IPA OG 17, ABV 6.5%, IBU 40)
-            # вариант 3. Кер Сари Пшеничное (Wheat Beer - Other. ABV 4,5%)
-            # вариант 4. Butch & Dutch - IPA 100 IBU (0,5) (IPA - International. ABV 7%, IBU 100)
-            # вариант 5. Trappistes Rochefort 6 (Belgian Dubbel. ABV 7,5%, IBU 22)
-            # вариант 6. Fournier - Frères Producteurs - Eleveurs - Cidre Rosé (Cider - Rosé. ABV 3%)
-            # Убираем все что в (...)
-            brewery_and_name = full_name.split(' (')[0]
-            # Если вариант 3 или 5
-            if len(brewery_and_name.split(' - ')) == 1:
-                # Если модификация, то папка будет пустой а parent_id будет содержать uuid родительского товара
-                if not self.parent_id:
-                    brewery = self.path_name.split('/')[-1]
-                name = brewery_and_name
-            # Если вариант 1 и 4
-            elif len(brewery_and_name.split(' - ')) == 2:
-                brewery = brewery_and_name.split(' - ')[0]
-                name = brewery_and_name.split(' - ')[1]
-            # Вариант 6
+        # Если в сервисе у товара определен аттрибут "Розлив", то индекс аттрибута "Алкогольная продукция",
+        # в массиве аттрибутов будет 1, если не определен, то индекс будет 0. это происходит т.к. аттрибут
+        # "Алкогольная продукция", является обязательным для всех товаров
+        #
+        # Признак алкогольной продукции
+        # дополнительное поле "Алкогольная продукция" в массиве ['attributes'] - элемент с индексом 1
+        # True - чек-бокс установлен, False - не установлен
+        # проверяем, что аттрибут "Алкогольная продукция" == True
+        # if hasattr(self, 'attributes'):
+        if (self.attributes is not None) or is_modification:
+            # Если модификация, то принимаем, что продукт алкогольный
+            if is_modification:
+                is_alco = True
             else:
-                brewery = ' - '.join(brewery_and_name.split(' - ')[:-1])
-                name = brewery_and_name.split(' - ')[-1]
-            brewery = brewery.title()
-            name = name.title()
-        except Exception:
-            a = 1
+                # Если есть аттрибут алкогольной продукции
+                if len(self.attributes) == 1:
+                    is_alco = self.attributes[0].value
+                # Если у товара определен аттрибут розлива
+                elif len(self.attributes) == 2:
+                    is_draft = True if self.attributes[0].value.lower() == 'да' else False
+                    is_alco = self.attributes[1].value
+        # Если пиво розливное, нужно убрать (0,5) из наименования
+        if is_draft:
+            brewery_and_name = full_name.replace(' (0,5)', '')
+
+        # Получаем название пивоварни
+        # Варианты наименований:
+        # вариант 1. 4Пивовара - Black Jesus White Pepper (Porter - American. OG 17, ABV 6.7%, IBU 69)
+        # вариант 2. 4Пивовара - Ether [Melon] (Sour - Farmhouse IPA OG 17, ABV 6.5%, IBU 40)
+        # вариант 3. Кер Сари Пшеничное (Wheat Beer - Other. ABV 4,5%)
+        # вариант 4. Butch & Dutch - IPA 100 IBU (0,5) (IPA - International. ABV 7%, IBU 100)
+        # вариант 5. Trappistes Rochefort 6 (Belgian Dubbel. ABV 7,5%, IBU 22)
+        # вариант 6. Fournier - Frères Producteurs - Eleveurs - Cidre Rosé (Cider - Rosé. ABV 3%)
+        # Убираем все что в (...)
+        brewery_and_name = full_name.split(' (')[0]
+        # Если вариант 3 или 5
+        if len(brewery_and_name.split(' - ')) == 1:
+            # Если модификация, то папка будет пустой а parent_id будет содержать uuid родительского товара
+            if not self.parent_id:
+                brewery = self.path_name.split('/')[-1]
+            name = brewery_and_name
+        # Если вариант 1 и 4
+        elif len(brewery_and_name.split(' - ')) == 2:
+            brewery = brewery_and_name.split(' - ')[0]
+            name = brewery_and_name.split(' - ')[1]
+        # Вариант 6
+        else:
+            brewery = ' - '.join(brewery_and_name.split(' - ')[:-1])
+            name = brewery_and_name.split(' - ')[-1]
+        brewery = brewery.title()
+        name = name.title()
 
         if is_alco:
             # Убираем пивоварню из полного имени
-            try:
-                additional_info = full_name.split(' (')[-1].replace(')', '')
-                # Получаем стиль пива/сидра
-                style = additional_info.split('.')[0]
-                # Если в стиле указа ни сидр, то это сидр
-                if style.lower().find('cider') != -1:
-                    is_beer = False
-                    is_cider = True
-                else:
-                    is_beer = True
-                    is_cider = False
-            except Exception:
-                a = 1
-            try:
-                additional_info = additional_info.split('. ')[1].split(', ')
-            except Exception:
-                a = 1
-            try:
-                for info in additional_info:
-                    if info.lower().find('og') != -1:
-                        og = float(info.lower().replace('og ', '').replace(',', '.').replace('%', ''))
-                    elif info.lower().find('abv') != -1:
-                        abv = float(info.lower().replace('abv ', '').replace(',', '.').replace('%', ''))
-                    elif info.lower().find('ibu') != -1:
-                        ibu = int(info.lower().replace('ibu ', ''))
-            except Exception:
-                a = 1
+            additional_info = full_name.split(' (')[-1].replace(')', '')
+            # Получаем стиль пива/сидра
+            style = additional_info.split('.')[0]
+            # Если в стиле указа ни сидр, то это сидр
+            if style.lower().find('cider') != -1:
+                is_beer = False
+                is_cider = True
+            else:
+                is_beer = True
+                is_cider = False
+
+            additional_info = additional_info.split('. ')[1].split(', ')
+
+            for info in additional_info:
+                if info.lower().find('og') != -1:
+                    og = float(info.lower().replace('og ', '').replace(',', '.').replace('%', ''))
+                elif info.lower().find('abv') != -1:
+                    abv = float(info.lower().replace('abv ', '').replace(',', '.').replace('%', ''))
+                elif info.lower().find('ibu') != -1:
+                    ibu = int(info.lower().replace('ibu ', ''))
 
         return GoodTuple(
             brewery=brewery,
