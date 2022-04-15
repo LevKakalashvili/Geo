@@ -39,8 +39,11 @@ class KonturMarketDBGood(models.Model):
                                   help_text='Код алкогольной продукции (код АП) в ЕГАИС')
 
     # ЕГАИС наименование
+    # Одно и то же пиво может быть с разными кодами алкогольной продукции:
+    # 1. разный объем 'Пиво светлое пастеризованное фильтрованное 'Петрюс Блонд' 0,33 и 0,75
+    # 2. разные импортеры, диллеры могут поставить разные кода АП
+    # поэтому уникальность поля не трубуется
     full_name = models.CharField(max_length=200,
-                                 unique=True,
                                  help_text='Полное ЕГАИС наименование товара')
 
     # Внешний ключ на модель, таблицу производителя
@@ -67,12 +70,11 @@ class KonturMarketDBGood(models.Model):
 
                 stock = KonturMarketDBStock(quantity=km_good.quantity_2,
                                             egais_code=good)
-                try:
-                    producer.save()
-                    good.save()
-                    stock.save()
-                except Exception:
-                    a = 1
+
+                producer.save()
+                good.save()
+                stock.save()
+
 
 
 class KonturMarketDBStock(models.Model):
