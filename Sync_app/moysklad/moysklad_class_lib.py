@@ -131,9 +131,9 @@ class Good(BaseModel):
             # модификации тоже нужно обработать и выставить флаги пиво, сидр, безалко
             is_modification = True
         # Самый рабочий вариант, но не красивый в использовании.
-        # Т.к. не все модификации товара заведены, как модификации просто удаляем из названия мусор.
+        # Т.к. не все модификации товара заведены, как модификации, просто удаляем из названия мусор.
         # 'Barista Chocolate Quad (Belgian Quadrupel. ABV 11%) (0,75)'
-        full_name = full_name.replace(' (0,75)', '').replace(' (0,33)', '')
+        full_name = remove_trash_from_string(full_name)
 
         # Если в сервисе у товара определен аттрибут "Розлив", то индекс аттрибута "Алкогольная продукция",
         # в массиве аттрибутов будет 1, если не определен, то индекс будет 0. это происходит т.к. аттрибут
@@ -223,30 +223,6 @@ class Good(BaseModel):
             is_beer=is_cider
         )
 
-
-
-    # def __post_init__(self) -> None:
-    #     if self.convert_name:
-    #         self.commercial_name = self._convert_name(self.commercial_name)
-
-    # @staticmethod
-    # def _convert_name(name: str) -> str:
-    #     """Метод преобразует строку наименования вида.
-    #     4Пивовара - Black Jesus White Pepper (Porter - American. OG 17, ABV 6.7%, IBU 69)
-    #     к строке вида
-    #     4Пивовара - Black Jesus White Pepper.
-    #
-    #     :param name: Наименование товара.
-    #     :type name: str
-    #     :rtype: str
-    #     """
-    #     return name.split(' (')[0].replace('  ', ' ').strip()
-
-    # @property
-    # def to_tuple(self) -> Tuple[str, str, int, Decimal]:
-    #     return self.commercial_name, self.egais_name, self.quantity, self.price
-
-
 @dataclass()
 class MoySklad:
     """Класс описывает работу с сервисом МойСклад по JSON
@@ -320,3 +296,14 @@ class MoySklad:
             converted_goods.append(Good(**good))
         return converted_goods
 
+_TRASH: tuple = (
+    ' (0,75)',
+    ' (0,33)',
+    ' Бутылка 0,75',
+    ' ж\б'
+)
+def remove_trash_from_string(in_str: str) -> str:
+    """Метод вырезает из входной строки мусор, определнный в котеже _TRASH()."""
+    for trash_element in _TRASH:
+        in_str = in_str.replace(trash_element, '')
+    return in_str
