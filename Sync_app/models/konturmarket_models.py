@@ -3,7 +3,7 @@ from typing import List
 
 from django.db import models
 
-from Sync_app.konturmarket.konturmarket_class_lib import GoodEGAIS as StockEGAIS
+from Sync_app.konturmarket.konturmarket_class_lib import StockEGAIS
 
 
 class KonturMarketDBProducer(models.Model):
@@ -76,13 +76,12 @@ class KonturMarketDBGood(models.Model):
                 stock.save()
 
 
-
 class KonturMarketDBStock(models.Model):
     """Класс описывает модель остатка по товару в системе ЕГАИС."""
 
     # Количество товара на складе
     quantity = models.PositiveSmallIntegerField(help_text='Остаток товара на остатках в ЕГАИС на 2ом регистре',
-                                                null = True
+                                                null=True
                                                 )
 
     # Код алкогольной продукции
