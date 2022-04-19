@@ -1,11 +1,11 @@
 import os
-
-from Sync_app import googlesheets, ms, kmarket
-import Sync_app.common.functions as app_func
 import django
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "Geo.settings")
 django.setup()
+
+from Sync_app import googlesheets, ms, kmarket
+import Sync_app.common.functions as app_func
 
 import Sync_app.models
 from Sync_app.models.konturmarket_models import KonturMarketDBGood as db_km_good
