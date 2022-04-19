@@ -2,3 +2,6 @@ Django
 pydantic
 requests
 mysqlclient
+httplib2
+google-api-python-client
+oauth2client

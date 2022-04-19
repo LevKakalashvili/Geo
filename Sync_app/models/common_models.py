@@ -5,9 +5,9 @@ from Sync_app.models.moysklad_models import MoySkladDBGood
 
 
 class Compilance(models.Model):
-    """Класс описывает модель таблицы соотвествия, кодов товаров и кодов алкогольной продукции.
+    """Класс описывает модель таблицы соответствия, кодов товаров и кодов алкогольной продукции.
     Коды товаров - коды товаров из сервиса МойСклад.
-    Коды алкгольной продукции ЕГАИС - коды товаров из сервиса Контур.Маркет."""
+    Коды алкогольной продукции ЕГАИС - коды товаров из сервиса Контур.Маркет."""
 
     # Внешний ключ на модель товара Контур.Маркета
     egais_code = models.ForeignKey(KonturMarketDBGood,
@@ -18,9 +18,7 @@ class Compilance(models.Model):
 
     # Внешний ключ на модель товара МойСклад
     uuid = models.ForeignKey(MoySkladDBGood,
-                                   on_delete=models.CASCADE,
-                                   db_column='uuid',
-                                   help_text='Уникальный идентификатор товара',
-                                   )
-
-
+                             on_delete=models.CASCADE,
+                             db_column='uuid',
+                             help_text='Уникальный идентификатор товара',
+                             )
