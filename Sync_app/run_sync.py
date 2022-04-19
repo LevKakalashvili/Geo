@@ -30,8 +30,8 @@ if __name__ == '__main__':
                                         )
     # Оставляем только коммерческое название и код алкогольной продукции
     compl_table = [i[:len(i):2] for i in compl_table]
-    a = app_func.db_fill_comp_table(googlesheets_copm_table=compl_table)
-    a = db_ms_good.objects.all()
-
+    app_func.db_fill_comp_table(googlesheets_copm_table=compl_table)
+    # a = db_ms_good.objects.all()
+    a = 1
 
 
