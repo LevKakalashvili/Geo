@@ -12,5 +12,5 @@ def db_fill_comp_table(googlesheets_copm_table: list[list[str]]) -> bool:
     if not googlesheets_copm_table:
         return False
     for good in googlesheets_copm_table:
-
+        pass
     return False
