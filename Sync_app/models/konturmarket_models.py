@@ -51,6 +51,19 @@ class KonturMarketDBGood(models.Model):
                                  on_delete=models.CASCADE,
                                  db_column='fsrar_id')
 
+    # Объем продукции. Если не укзан, то считаем, что позиция разливная и нужно выставить флаг,
+    # что объем расчетный
+    capacity = models.FloatField(db_column='capacity',
+                                 null=True,
+                                 help_text='Объем алкогольной продукции')
+
+    # Объем продукции. Если не укзан, то считаем, что позиция разливная и нужно выставить флаг,
+    # что объем расчетный
+    is_calculated = models.BooleanField(db_column='is_calculated',
+                                        # По умолчанию ставим в False
+                                        default=False,
+                                        help_text='Признак того, что объем был рассчитан, f не прочитан из Контур.Маркет')
+
     @staticmethod
     def save_objects_to_storage(list_km_goods: List[StockEGAIS]):
         """Метод сохранения данных о товарах в БД."""
@@ -65,7 +78,8 @@ class KonturMarketDBGood(models.Model):
                 good = KonturMarketDBGood(egais_code=km_good.good.alco_code,
                                           full_name=km_good.good.name,
                                           # fsrar_id=km_good.good.brewery.fsrar_id
-                                          fsrar_id=producer
+                                          fsrar_id=producer,
+
                                           )
 
                 stock = KonturMarketDBStock(quantity=km_good.quantity_2,
