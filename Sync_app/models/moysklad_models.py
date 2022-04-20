@@ -40,9 +40,9 @@ class MoySkladDBGood(models.Model):
     # Признак алкогольной продукции
     is_alco = models.BooleanField(help_text='Признак алкогольного напитка')
     # Признак разливного пива
-    is_draft = models.BooleanField(help_text='Признак пива')
+    is_draft = models.BooleanField(help_text='Признак разливного пива')
     # Признак сидр или нет
-    is_cider = models.BooleanField(help_text='Признак розливного пива')
+    is_cider = models.BooleanField(help_text='Признак сидра')
 
     @staticmethod
     def save_objects_to_storage(list_ms_goods: List[MoySkladGood]):
