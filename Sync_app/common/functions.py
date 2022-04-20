@@ -1,5 +1,5 @@
 """Модуль для вспомогательных функций."""
-from Sync_app.models import MoySkladDBGood
+from Sync_app.models import MoySkladDBGood, KonturMarketDBGood
 from django.db import models
 
 def db_fill_comp_table(googlesheets_copm_table: list[list[str]]) -> list[list[str]]:
@@ -11,18 +11,30 @@ def db_fill_comp_table(googlesheets_copm_table: list[list[str]]) -> list[list[st
 
     if not googlesheets_copm_table:
         return False
-    # Если в таблице соотвествия из googlesheets, не усnановлено соотвествие - второй элемент будет пустой,
-    # то пропускаем строку.
-    # Сначала нужно узнать отностится ли данный код АП к розливному пиву или к фасвке. Дл этого нужно сделать запрос
-    # в таблицe ЕГАИС и узнать емкость продукта по коду АП
-    # Потом пытаемся найти uuid, с учетом емкости товарной еденицы, для наименования, если нашли сохраняем в БД соотвествие, иначе добавляем
-    # в возвращаемый список
+
     for good in googlesheets_copm_table:
-        brewery = good[0].split(' - ')[0]
-        name = good[0].split(' - ')[1]
-        a = MoySkladDBGood.objects\
-            .filter(brewery=brewery)\
-            .filter(name=name)
-        b = 1
+        # Если в таблице соотвествия из googlesheets, не усnановлено соотвествие - второй элемент будет пустой,
+        # то пропускаем строку.
+        if len(good) > 1:
+            # Будет встречаться 2 вида записей
+            # 1. 4Пивовара - Вброс, Бакунин - How Much Is Too Much [Raspberry],
+            # Степь и Ветер - Smoothie Mead: Raspberry, Black Currant, Mint
+            # 2 Barbe Ruby, Barista Chocolate Quad
+            # Проверяем на наличие в строке ' - '
+            if good[0].find(' - ') == -1:
+                ms_good = MoySkladDBGood.objects.filter(name=name).filter(is_draft=False)
+            else:
+                brewery = good[0].split(' - ')[0]
+                name = good[0].split(' - ')[1]
+                ms_good = MoySkladDBGood.objects.filter(brewery=brewery).filter(name=name).filter(is_draft=False)
+
+            # В googlesheets не указыватеся разливное пиво
+            try:
+                egias_good = KonturMarketDBGood.objects.get(egais_code=good[1])
+            except Exception:
+                a = 1
+            if not egias_good.is_draft:
+                a=1
+
 
     return False
