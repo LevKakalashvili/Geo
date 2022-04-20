@@ -17,10 +17,10 @@ LAST_COLUMN_GOODS_AVAILABILITY = 'G'  # последний столбец с д�
 
 SPREEDSHEET_ID_EGAIS = '1xY9W8a9fPazRW1Nc_K-5CkEwm4Q28jtsv_t2-Z0tiAE'
 
-# Лист "Соответсвия ЕГАИС"
+# Лист "Соответсвия ЕГАИС".
 LIST_ID_EGAIS = '0'
 LIST_NAME_EGAIS = 'Соответсвия ЕГАИС'
-FIRST_CELL_EGAIS = 'A1'
+FIRST_CELL_EGAIS = 'A2'
 LAST_COLUMN_EGAIS = 'C'
 
 # Лист "ЕГАИС справочник"
