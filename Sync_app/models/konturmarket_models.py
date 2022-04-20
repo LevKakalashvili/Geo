@@ -64,6 +64,13 @@ class KonturMarketDBGood(models.Model):
                                         default=False,
                                         help_text='Признак того, что объем был рассчитан, f не прочитан из Контур.Маркет')
 
+    # Признак разливной продукции. Расчитываемый параметр: если capacity > 1л, то принимаем что товар разливной
+    # что объем расчетный
+    is_draft = models.BooleanField(db_column='is_draft',
+                                        # По умолчанию ставим в False
+                                        default=False,
+                                        help_text='Признак разливного пива')
+
     @staticmethod
     def save_objects_to_storage(list_km_goods: List[StockEGAIS]):
         """Метод сохранения данных о товарах в БД."""
@@ -83,7 +90,9 @@ class KonturMarketDBGood(models.Model):
                                           # Если нет объема продукции, то считаем, что товар разливной, объемом 30л
                                           # и выставляем признак, что объем расчетный
                                           # т.к. розлив может быть и 20л и 30л и 50л
-                                          is_calculated= True if (km_good.good.capacity is None) else False
+                                          is_calculated= True if (km_good.good.capacity is None) else False,
+                                          is_draft=True if (km_good.good.capacity is not None) and
+                                                           (km_good.good.capacity > 1) else False
                                           )
 
                 stock = KonturMarketDBStock(quantity=km_good.quantity_2,
