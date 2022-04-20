@@ -19,9 +19,9 @@ if __name__ == '__main__':
     # db_ms_good.save_objects_to_storage(list_ms_goods=ms_goods)
     #
     # # Получаем ассортимент КонтурМаркет
-    # km_goods = kmarket.get_egais_assortment()
-    # # Обновляем БД объектами справочника из сервиса Контур.Маркет
-    # db_km_good.save_objects_to_storage(list_km_goods=km_goods)
+    km_goods = kmarket.get_egais_assortment()
+    # Обновляем БД объектами справочника из сервиса Контур.Маркет
+    db_km_good.save_objects_to_storage(list_km_goods=km_goods)
 
     # Получаем таблицу соответствий из google таблицы
     compl_table = googlesheets.get_data(spreadsheets_id=gs_vars.SPREEDSHEET_ID_EGAIS,
