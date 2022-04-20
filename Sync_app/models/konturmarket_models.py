@@ -77,9 +77,13 @@ class KonturMarketDBGood(models.Model):
 
                 good = KonturMarketDBGood(egais_code=km_good.good.alco_code,
                                           full_name=km_good.good.name,
-                                          # fsrar_id=km_good.good.brewery.fsrar_id
                                           fsrar_id=producer,
-
+                                          # Если нет объема продукции, то считаем, что товар разливной, объемом 30л
+                                          capacity=km_good.good.capacity if (km_good.good.capacity is not None) else 30,
+                                          # Если нет объема продукции, то считаем, что товар разливной, объемом 30л
+                                          # и выставляем признак, что объем расчетный
+                                          # т.к. розлив может быть и 20л и 30л и 50л
+                                          is_calculated= True if (km_good.good.capacity is None) else False
                                           )
 
                 stock = KonturMarketDBStock(quantity=km_good.quantity_2,
