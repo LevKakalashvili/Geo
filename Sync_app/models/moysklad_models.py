@@ -3,6 +3,7 @@ from typing import List
 
 from django.db import models
 
+from Sync_app.models.konturmarket_models import KonturMarketDBGood
 from Sync_app.moysklad.moysklad_class_lib import Good as MoySkladGood
 
 
@@ -19,7 +20,7 @@ class MoySkladDBGood(models.Model):
                                    help_text='Уникальный идентификатор родительского товара. '
                                              'Для модификация товаров')
     # Полное наименование товара.
-    # Использовать нужно только для связки данных из КонутрМаркет
+    # Использовать нужно только для связки данных из Контур.Маркет
     full_name = models.CharField(max_length=200, unique=True, help_text='Полное имя товара')
     # Путь, папка
     path_name = models.CharField(max_length=100, help_text='Папка товара')
@@ -43,6 +44,10 @@ class MoySkladDBGood(models.Model):
     is_draft = models.BooleanField(help_text='Признак разливного пива')
     # Признак сидр или нет
     is_cider = models.BooleanField(help_text='Признак сидра')
+    # Емкость тары
+    capacity = models.FloatField(default=0.0, help_text='Емкость тары')
+    # Код ЕГАИС
+    egais_code = models.ManyToManyField(KonturMarketDBGood, help_text='Код алкогольной продукции')
 
     @staticmethod
     def save_objects_to_storage(list_ms_goods: List[MoySkladGood]):
@@ -53,7 +58,7 @@ class MoySkladDBGood(models.Model):
                 # (разливное пиво заведено 0,5л - отдельный товар,
                 # а 1л - комплект из двух товаров 0,5
                 if ms_good.quantity is not None:
-                    parced_name = ms_good.parse_name
+                    parsed_name = ms_good.parse_name
                     # Заполняем товар
                     good = MoySkladDBGood(
                         uuid=ms_good.id,
@@ -62,28 +67,29 @@ class MoySkladDBGood(models.Model):
                         # Если модификация товара
                         path_name=ms_good.path_name if ms_good.path_name is not None else '',
                         price=ms_good.price[0].value / 100,
-                        brewery=parced_name.brewery,
-                        name=parced_name.name,
-                        og=parced_name.og,
-                        abv=parced_name.abv,
-                        ibu=parced_name.ibu,
-                        is_alco=parced_name.is_alco,
-                        is_draft=parced_name.is_draft,
-                        is_cider=parced_name.is_cider,
-                        style=parced_name.style,
+                        brewery=parsed_name.brewery,
+                        name=parsed_name.name,
+                        og=parsed_name.og,
+                        abv=parsed_name.abv,
+                        ibu=parsed_name.ibu,
+                        is_alco=parsed_name.is_alco,
+                        is_draft=parsed_name.is_draft,
+                        is_cider=parsed_name.is_cider,
+                        style=parsed_name.style,
+                        capacity=parsed_name.capacity
                     )
                     good.save()
                     # Заполняем остатки
-                    stoks = MoySkladDBStock(
+                    stocks = MoySkladDBStock(
                         uuid=good,
                         quantity=ms_good.quantity)
-                    stoks.save()
+                    stocks.save()
 
 
 class MoySkladDBStock(models.Model):
     """Класс описывает модель остатка по товару."""
 
-    # Количество товара на складе. Может отсутсвовать, если товар - комплект
+    # Количество товара на складе. Может отсутствовать, если товар - комплект
     quantity = models.PositiveSmallIntegerField(help_text='Остаток товара на складе')
     # UUID товара
     uuid = models.OneToOneField(MoySkladDBGood,

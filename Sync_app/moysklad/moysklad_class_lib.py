@@ -11,6 +11,8 @@ from pydantic import BaseModel, Field
 # import googledrive.googlesheets_vars as gs_vars
 # import logger_config
 import Sync_app.moysklad.moysklad_urls as ms_urls
+
+
 # from utils.file_utils import save_to_excel
 
 # logging.config.dictConfig(logger_config.LOGGING_CONF)
@@ -39,6 +41,8 @@ class GoodTuple(NamedTuple):
     is_draft: bool = False
     is_cider: bool = False
     is_beer: bool = False
+    capacity: float = 0.0
+
 
 class GoodsType(Enum):
     """Перечисление для определения, какой тип товаров необходимо получить.
@@ -52,28 +56,34 @@ class GoodsType(Enum):
     non_alco = 2
     snack = 3
 
+
 class Attributes(BaseModel):
     """Класс описывает поле аттрибутов. В аттрибутах храняться: признак розлива и признак алкогольной продукции."""
     name: str
     value: Union[bool, str]
 
+
 class Price(BaseModel):
     value: int
+
 
 class Modification(BaseModel):
     """"Класс описывает поле модификации в сервисе. В JSON представлении - атрибут 'characteristics'."""
     name: str
     value: str
 
+
 class MetaParentGood(BaseModel):
     """Класс описывает метаданные родительского объекта, для случая когда используеться модификация товара."""
     # Ссылка на родительский товар
     uuidhref: str = Field(alias='uuidHref')
 
+
 class ParentGood(BaseModel):
     """Класс описывает структуру родительского товара. Это применимо для модификаций товора."""
     # Метаданные родительского товара
     meta: MetaParentGood
+
 
 class Good(BaseModel):
     """Класс описывает структуру товара в сервисе МОйСклад."""
@@ -81,7 +91,7 @@ class Good(BaseModel):
     id: str
     # Наименование товара. Например Lux In Tenebris - Der Grusel (Sour - Gose - Fruited. OG 11.5%, ABV 4,2%)
     name: str
-    # Количество товара, может отсутсвовать, если товар - комплект
+    # Количество товара, может отсутствовать, если товар - комплект
     quantity: Optional[int]
     # Имя папки товара. У модификаций этого аттрибута нет, но появляется аттрибут 'characteristics'
     path_name: Optional[str] = Field(alias='pathName')
@@ -91,15 +101,17 @@ class Good(BaseModel):
     modifications: Optional[List[Modification]] = Field(alias='characteristics')
     # Ссылка на родильский товар. Применимо только для модификаций товаров
     parent_good_href: Optional[ParentGood] = Field(alias='product')
-    # Дополнительные, пользовательсике аттрибуты для товаоа.
+    # Дополнительные, пользовательские аттрибуты для товара.
     # В текущей версии:
     # Розлив - да, нет
     # Алкогольная продукция - True, False
     attributes: Optional[List[Attributes]] = Field(alias='attributes')
+    # Объем продукции
+    volume: Optional[float]
 
     @property
     def parent_id(self):
-        """Свойство возвращает uuid родительской товар."""
+        """Свойство возвращает uuid родительский товар."""
         if self.parent_good_href:
             # Ссылка на товар хранится в виде
             # https://online.moysklad.ru/app/#good/edit?id=09f5f652-269e-11ec-0a80-02c5000e4cc9
@@ -121,11 +133,17 @@ class Good(BaseModel):
         ibu: int = 0
         is_modification: bool = False
         additional_info: str = ''
+        capacity: float = 0.0
 
         # Если товар - модификация
         # Alaska - Стаутский советник (Stout - Imperial / Double Milk. OG 16,5%, ABV 10,5%) (Банка 0,33)
 
         if self.modifications:
+            capacity = _get_capacity(is_draft=is_draft,
+                                     modification=self.modifications,
+                                     name=full_name
+                                     )
+
             full_name = full_name.replace(f' ({self.modifications[0].value})', '')
             # Устанавливаем флаг в True, т.к. при проверке на алко (ниже по коду)
             # модификации тоже нужно обработать и выставить флаги пиво, сидр, безалко
@@ -133,7 +151,8 @@ class Good(BaseModel):
         # Самый рабочий вариант, но не красивый в использовании.
         # Т.к. не все модификации товара заведены, как модификации, просто удаляем из названия мусор.
         # 'Barista Chocolate Quad (Belgian Quadrupel. ABV 11%) (0,75)'
-        full_name = remove_trash_from_string(full_name)
+
+        full_name = _remove_trash_from_string(full_name)
 
         # Если в сервисе у товара определен аттрибут "Розлив", то индекс аттрибута "Алкогольная продукция",
         # в массиве аттрибутов будет 1, если не определен, то индекс будет 0. это происходит т.к. аттрибут
@@ -156,7 +175,7 @@ class Good(BaseModel):
                 elif len(self.attributes) == 2:
                     is_draft = True if self.attributes[0].value.lower() == 'да' else False
                     is_alco = self.attributes[1].value
-        # Если пиво розливное, нужно убрать (0,5) из наименования
+        # Если пиво разливное, нужно убрать (0,5) из наименования
         if is_draft:
             brewery_and_name = full_name.replace(' (0,5)', '')
 
@@ -167,12 +186,12 @@ class Good(BaseModel):
         # вариант 3. Кер Сари Пшеничное (Wheat Beer - Other. ABV 4,5%)
         # вариант 4. Butch & Dutch - IPA 100 IBU (0,5) (IPA - International. ABV 7%, IBU 100)
         # вариант 5. Trappistes Rochefort 6 (Belgian Dubbel. ABV 7,5%, IBU 22)
-        # вариант 6. Fournier - Frères Producteurs - Eleveurs - Cidre Rosé (Cider - Rosé. ABV 3%)
+        # вариант 6. Fournier - Frères Producteurs - Eleveurs - Cidre Rose (Cider - Rose. ABV 3%)
         # Убираем все что в (...)
         brewery_and_name = full_name.split(' (')[0]
         # Если вариант 3 или 5
         if len(brewery_and_name.split(' - ')) == 1:
-            # Если модификация, то папка будет пустой а parent_id будет содержать uuid родительского товара
+            # Если модификация, то папка будет пустой, а parent_id будет содержать uuid родительского товара
             if not self.parent_id:
                 brewery = self.path_name.split('/')[-1]
             name = brewery_and_name
@@ -220,8 +239,10 @@ class Good(BaseModel):
             is_draft=is_draft,
             is_alco=is_alco,
             is_cider=is_cider,
-            is_beer=is_cider
+            is_beer=is_cider,
+            capacity=capacity
         )
+
 
 @dataclass()
 class MoySklad:
@@ -294,7 +315,9 @@ class MoySklad:
 
         for good in goods:
             converted_goods.append(Good(**good))
+
         return converted_goods
+
 
 _TRASH: tuple = (
     ' (0,75)',
@@ -302,8 +325,41 @@ _TRASH: tuple = (
     ' Бутылка 0,75',
     ' ж\б'
 )
-def remove_trash_from_string(in_str: str) -> str:
-    """Метод вырезает из входной строки мусор, определнный в котеже _TRASH()."""
+
+MODIFICATION_SET: dict = {
+    'Банка 0,33': 0.33,
+    'Банка 0,45': 0.45,
+    'Бутылка 0,33': 0.33,
+    'Бутылка 0,375': 0.375,
+    'Бутылка 0,5': 0.5,
+    'Бутылка 0,75': 0.75,
+    'ж.б 0,33': 0.33,
+    'ж/б 0,5': 0.5
+}
+
+
+def _remove_trash_from_string(in_str: str) -> str:
+    """Метод вырезает из входной строки мусор, определённый в кортеже _TRASH()."""
     for trash_element in _TRASH:
         in_str = in_str.replace(trash_element, '')
     return in_str
+
+
+def _get_capacity(
+        is_draft: bool = False,
+        name: str = '',
+        modification=None
+        ) -> float:
+    """Метод возвращает объем продукции."""
+    # Модификации в сервисе не имеют аттрибут объем, но название модификации будем иметь вид
+    # Alaska - Нигилист (Lager - IPL (India Pale Lager). OG 16%, ABV 6,8%, IBU 60) (Название модификации)
+    # Все модификации сделаны для разделения по объемам
+    if modification is None:
+        if is_draft:
+            return 0.5
+        return 0
+    if modification[0].name == 'Тара':
+        for capacity in MODIFICATION_SET:
+            if capacity == modification[0].value:
+                return float(MODIFICATION_SET[capacity])
+    return 0
