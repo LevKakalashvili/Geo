@@ -1,4 +1,5 @@
 """В модуле хранятся описание классов."""
+import string
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union, NamedTuple
@@ -11,7 +12,7 @@ from pydantic import BaseModel, Field
 # import googledrive.googlesheets_vars as gs_vars
 # import logger_config
 import Sync_app.moysklad.moysklad_urls as ms_urls
-
+from Sync_app.common.functions import string_title
 
 # from utils.file_utils import save_to_excel
 
@@ -128,6 +129,7 @@ class Good(BaseModel):
         is_draft: bool = False
         is_alco: bool = False
         is_cider: bool = False
+        is_beer: bool = False
         og: float = 0.0
         abv: float = 0.0
         ibu: int = 0
@@ -137,17 +139,24 @@ class Good(BaseModel):
 
         # Если товар - модификация
         # Alaska - Стаутский советник (Stout - Imperial / Double Milk. OG 16,5%, ABV 10,5%) (Банка 0,33)
-
+        if full_name.find('(Да)') > -1 or\
+            full_name.find('Бакунин - Юбилейный (Stout - Imperial Milk / Sweet. OG 26%, ABV 13%, IBU 40) (ж/б)') > -1 or\
+            full_name.find('HopHead - Нимфоманка (Barleywine - English. OG 32%, ABV 13%, IBU 40) (ж.б 0,33)') > -1:
+            a = 1
         if self.modifications:
             capacity = _get_capacity(is_draft=is_draft,
                                      modification=self.modifications,
                                      name=full_name
                                      )
 
-            full_name = full_name.replace(f' ({self.modifications[0].value})', '')
+            # full_name = full_name.replace(f' ({self.modifications[0].value})', '')
+            full_name = _remove_modification_from_name(name=full_name,
+                                                       modification=self.modifications)
             # Устанавливаем флаг в True, т.к. при проверке на алко (ниже по коду)
             # модификации тоже нужно обработать и выставить флаги пиво, сидр, безалко
             is_modification = True
+        else:
+            capacity = self.volume
         # Самый рабочий вариант, но не красивый в использовании.
         # Т.к. не все модификации товара заведены, как модификации, просто удаляем из названия мусор.
         # 'Barista Chocolate Quad (Belgian Quadrupel. ABV 11%) (0,75)'
@@ -204,7 +213,7 @@ class Good(BaseModel):
             brewery = ' - '.join(brewery_and_name.split(' - ')[:-1])
             name = brewery_and_name.split(' - ')[-1]
         brewery = brewery.title()
-        name = name.title()
+        name = string_title(name)
 
         if is_alco:
             # Убираем пивоварню из полного имени
@@ -239,7 +248,7 @@ class Good(BaseModel):
             is_draft=is_draft,
             is_alco=is_alco,
             is_cider=is_cider,
-            is_beer=is_cider,
+            is_beer=is_beer,
             capacity=capacity
         )
 
@@ -323,10 +332,11 @@ _TRASH: tuple = (
     ' (0,75)',
     ' (0,33)',
     ' Бутылка 0,75',
-    ' ж\б'
+    ' ж\б',
+    ' (ж/б)',
 )
 
-MODIFICATION_SET: dict = {
+_MODIFICATION_SET: dict = {
     'Банка 0,33': 0.33,
     'Банка 0,45': 0.45,
     'Бутылка 0,33': 0.33,
@@ -344,6 +354,18 @@ def _remove_trash_from_string(in_str: str) -> str:
         in_str = in_str.replace(trash_element, '')
     return in_str
 
+def _remove_modification_from_name(name: str = '',
+                                   modification=None
+                                   ) -> str:
+    """Метод удаляет из входной строки название модификации "Тара", поределенных  _MODIFICATION_SET()."""
+
+    if modification is None or not name:
+        return ''
+    for mod in modification:
+        if mod.name == 'Тара':
+             return name.replace(f' ({mod.value})', '')
+    return name
+
 
 def _get_capacity(
         is_draft: bool = False,
@@ -359,7 +381,7 @@ def _get_capacity(
             return 0.5
         return 0
     if modification[0].name == 'Тара':
-        for capacity in MODIFICATION_SET:
+        for capacity in _MODIFICATION_SET:
             if capacity == modification[0].value:
-                return float(MODIFICATION_SET[capacity])
+                return float(_MODIFICATION_SET[capacity])
     return 0

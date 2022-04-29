@@ -55,10 +55,12 @@ class MoySkladDBGood(models.Model):
         if list_ms_goods:
             for ms_good in list_ms_goods:
                 # Если текущий товар - не комплект из товаров
-                # (разливное пиво заведено 0,5л - отдельный товар,
+                # (разливное пиво заведено как отдельный товар с припиской (0,5),
                 # а 1л - комплект из двух товаров 0,5
                 if ms_good.quantity is not None:
                     parsed_name = ms_good.parse_name
+                    # if ms_good.id == 'a401643a-7c08-11eb-0a80-08fe000a5fdb':
+                    #     a = 1
                     # Заполняем товар
                     good = MoySkladDBGood(
                         uuid=ms_good.id,

@@ -1,14 +1,37 @@
 """Модуль для работы с Google Sheets"""
 import os
+import string
 from dataclasses import dataclass
-from typing import Any, List
+from typing import Any, List, NamedTuple
 
 import googleapiclient.discovery
 import httplib2
 from oauth2client.service_account import ServiceAccountCredentials
 
 import Sync_app.googledrive.googlesheets_vars as gs_vars
+from Sync_app.common.functions import string_title
 
+class CopmilanceRow(NamedTuple):
+    """Вспомогательный класс для хранения записи из таблицы соотвествия, описанной в googlesheets"""
+    commercial_name: str
+    egais_code: str
+
+    @property
+    def brewery(self) -> str:
+        return self.commercial_name.split(' - ')[0] \
+            if len(self.commercial_name.split(' - ')) > 1 else ''
+
+    @property
+    def name(self) -> str:
+        _len = len(self.commercial_name.split(' - '))
+        name: str = ''
+
+        if _len == 1:
+            name = self.commercial_name
+        else:
+            name = self.commercial_name.split(' - ')[1:]
+
+        return string_title(_str=name)
 
 @dataclass
 class GoogleSheets:
