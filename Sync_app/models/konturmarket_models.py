@@ -1,9 +1,11 @@
 """Модуль содержит описание моделей для работы с сервисом Контур.Маркет."""
 from typing import List
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 
 from Sync_app.konturmarket.konturmarket_class_lib import StockEGAIS
+from Sync_app.models.app_models import Capacity
 
 
 class KonturMarketDBProducer(models.Model):
@@ -51,30 +53,42 @@ class KonturMarketDBGood(models.Model):
                                  on_delete=models.CASCADE,
                                  db_column='fsrar_id')
 
-    # Объем продукции. Если не укзан, то считаем, что позиция разливная и нужно выставить флаг,
+    # Объем продукции. Если не указан, то считаем, что позиция разливная и нужно выставить флаг,
     # что объем расчетный
-    capacity = models.FloatField(db_column='capacity',
-                                 null=True,
-                                 help_text='Объем алкогольной продукции')
+    # capacity = models.FloatField(db_column='capacity',
+    #                              null=True,
+    #                              help_text='Объем алкогольной продукции')
+    capacity = models.ForeignKey(Capacity,
+                                 help_text='Емкость тары',
+                                 db_column='capacity',
+                                 on_delete=models.PROTECT)
 
-    # Объем продукции. Если не укзан, то считаем, что позиция разливная и нужно выставить флаг,
+    # Объем продукции. Если не указан, то считаем, что позиция разливная и нужно выставить флаг,
     # что объем расчетный
-    is_calculated = models.BooleanField(db_column='is_calculated',
-                                        # По умолчанию ставим в False
-                                        default=False,
-                                        help_text='Признак того, что объем был рассчитан, f не прочитан из Контур.Маркет')
+    # is_calculated = models.BooleanField(db_column='is_calculated',
+    #                                     # По умолчанию ставим в False
+    #                                     default=False,
+    #                                     help_text='Признак того, что объем был рассчитан, а не прочитан из '
+    #                                               'Контур.Маркет')
 
-    # Признак разливной продукции. Расчитываемый параметр: если capacity > 1л, то принимаем что товар разливной
-    # что объем расчетный
+    # Признак разливной продукции. Рассчитываемый параметр: если capacity > 1л, то принимаем что товар разливной -
+    # объем расчетный
     is_draft = models.BooleanField(db_column='is_draft',
-                                        # По умолчанию ставим в False
-                                        default=False,
-                                        help_text='Признак разливного пива')
+                                   # По умолчанию ставим в False
+                                   default=False,
+                                   help_text='Признак разливного пива')
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['egais_code', ]),
+            models.Index(fields=['full_name', ]),
+        ]
 
     @staticmethod
-    def save_objects_to_storage(list_km_goods: List[StockEGAIS]):
+    def save_objects_to_db(list_km_goods: List[StockEGAIS]):
         """Метод сохранения данных о товарах в БД."""
         if list_km_goods:
+            km_good: StockEGAIS
             for km_good in list_km_goods:
                 producer = KonturMarketDBProducer(fsrar_id=km_good.good.brewery.fsrar_id,
                                                   inn=km_good.good.brewery.inn,
@@ -82,17 +96,30 @@ class KonturMarketDBGood(models.Model):
                                                   full_name=km_good.good.brewery.full_name
                                                   )
 
+                # Если нет объема продукции, то считаем, что товар разливной, объемом 99 л
+                capacity = None
+                if (km_good.good.capacity is None):
+                    # Проверяем есть запись в таблице емкостей
+                    try:
+                        capacity = Capacity.objects.get(capacity=99)
+                        # если такой записи все еще нет в таблице, то создаем ее
+                    except ObjectDoesNotExist:
+                        capacity = Capacity(capacity=99)
+                        capacity.save()
+                else:
+                    # Проверяем есть запись в таблице емкостей
+                    try:
+                        capacity = Capacity.objects.get(capacity=km_good.good.capacity)
+                        # если такой записи все еще нет в таблице, то создаем ее
+                    except ObjectDoesNotExist:
+                        capacity = Capacity(capacity=km_good.good.capacity)
+                        capacity.save()
+
                 good = KonturMarketDBGood(egais_code=km_good.good.alco_code,
                                           full_name=km_good.good.name,
                                           fsrar_id=producer,
-                                          # Если нет объема продукции, то считаем, что товар разливной, объемом 30л
-                                          capacity=km_good.good.capacity if (km_good.good.capacity is not None) else 30,
-                                          # Если нет объема продукции, то считаем, что товар разливной, объемом 30л
-                                          # и выставляем признак, что объем расчетный
-                                          # т.к. розлив может быть и 20л и 30л и 50л
-                                          is_calculated= True if (km_good.good.capacity is None) else False,
-                                          is_draft=True if (km_good.good.capacity is not None) and
-                                                           (km_good.good.capacity > 1) else False
+                                          capacity=capacity,
+                                          is_draft=True if (capacity.capacity > 10) else False
                                           )
 
                 stock = KonturMarketDBStock(quantity=km_good.quantity_2,
