@@ -1,6 +1,5 @@
 """Модуль для работы с Google Sheets"""
 import os
-import string
 from dataclasses import dataclass
 from typing import Any, List, NamedTuple
 
@@ -11,8 +10,9 @@ from oauth2client.service_account import ServiceAccountCredentials
 import Sync_app.googledrive.googlesheets_vars as gs_vars
 from Sync_app.common.functions import string_title
 
-class CopmilanceRow(NamedTuple):
-    """Вспомогательный класс для хранения записи из таблицы соотвествия, описанной в googlesheets"""
+
+class CompilanceRow(NamedTuple):
+    """Вспомогательный класс для хранения записи из таблицы соответствия, описанной в googlesheets"""
     commercial_name: str
     egais_code: str
 
@@ -24,12 +24,13 @@ class CopmilanceRow(NamedTuple):
     @property
     def name(self) -> str:
         _len = len(self.commercial_name.split(' - '))
-        name: str = ''
-
+        name: str
+        if 'Broken' in  self.commercial_name:
+            a = 1
         if _len == 1:
             name = self.commercial_name
         else:
-            name = self.commercial_name.split(' - ')[1:]
+            name = ''.join(self.commercial_name.split(' - ')[1:])
 
         return string_title(_str=name)
 
