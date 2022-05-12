@@ -1,4 +1,4 @@
-"""Инициализация приложении."""
+"""Инициализация приложений."""
 from Sync_app.konturmarket.konturmarket_class_lib import KonturMarket
 from Sync_app.moysklad.moysklad_class_lib import MoySklad
 from Sync_app.googledrive.googledrive_class_lib import GoogleSheets
