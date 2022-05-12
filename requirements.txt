@@ -1,7 +1,7 @@
-Django
-pydantic
-requests
+Django~=4.0.4
+pydantic~=1.9.0
+requests~=2.27.1
 mysqlclient
-httplib2
-google-api-python-client
-oauth2client
+httplib2~=0.20.4
+google-api-python-client~=2.47.0
+oauth2client~=4.1.3
