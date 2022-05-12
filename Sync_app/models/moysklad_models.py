@@ -2,9 +2,11 @@
 from typing import List
 
 from django.db import models
+from django.core.exceptions import ObjectDoesNotExist
 
 from Sync_app.models.konturmarket_models import KonturMarketDBGood
 from Sync_app.moysklad.moysklad_class_lib import Good as MoySkladGood
+from Sync_app.models.app_models import Capacity
 
 
 class MoySkladDBGood(models.Model):
@@ -20,7 +22,7 @@ class MoySkladDBGood(models.Model):
                                    help_text='Уникальный идентификатор родительского товара. '
                                              'Для модификация товаров')
     # Полное наименование товара.
-    # Использовать нужно только для связки данных из Контур.Маркет
+    # Использовать нужно только для связки данных из КонтурМаркет
     full_name = models.CharField(max_length=200, unique=True, help_text='Полное имя товара')
     # Путь, папка
     path_name = models.CharField(max_length=100, help_text='Папка товара')
@@ -45,12 +47,24 @@ class MoySkladDBGood(models.Model):
     # Признак сидр или нет
     is_cider = models.BooleanField(help_text='Признак сидра')
     # Емкость тары
-    capacity = models.FloatField(default=0.0, help_text='Емкость тары')
+    # capacity = models.FloatField(default=0.0, help_text='Емкость тары')
+    capacity = models.ForeignKey(Capacity,
+                                 help_text='Емкость тары',
+                                 db_column='capacity',
+                                 on_delete=models.PROTECT)
     # Код ЕГАИС
     egais_code = models.ManyToManyField(KonturMarketDBGood, help_text='Код алкогольной продукции')
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['uuid', ]),
+            models.Index(fields=['full_name', ]),
+            models.Index(fields=['brewery', ]),
+            models.Index(fields=['name', ]),
+        ]
+
     @staticmethod
-    def save_objects_to_storage(list_ms_goods: List[MoySkladGood]):
+    def save_objects_to_db(list_ms_goods: List[MoySkladGood]):
         """Метод сохраняет объекты, созданные на основе списка list_ms_goods в БД."""
         if list_ms_goods:
             for ms_good in list_ms_goods:
@@ -61,6 +75,14 @@ class MoySkladDBGood(models.Model):
                     parsed_name = ms_good.parse_name
                     # if ms_good.id == 'a401643a-7c08-11eb-0a80-08fe000a5fdb':
                     #     a = 1
+                    # Проверяем есть запись в таблице емкостей
+                    try:
+                        capacity = Capacity.objects.get(capacity=parsed_name.capacity)
+                    # если такой записи все еще нет в таблице, то создаем ее
+                    except ObjectDoesNotExist:
+                        capacity = Capacity(capacity=parsed_name.capacity)
+                    capacity.save()
+
                     # Заполняем товар
                     good = MoySkladDBGood(
                         uuid=ms_good.id,
@@ -78,14 +100,19 @@ class MoySkladDBGood(models.Model):
                         is_draft=parsed_name.is_draft,
                         is_cider=parsed_name.is_cider,
                         style=parsed_name.style,
-                        capacity=parsed_name.capacity
+                        capacity=capacity
                     )
-                    good.save()
-                    # Заполняем остатки
-                    stocks = MoySkladDBStock(
-                        uuid=good,
-                        quantity=ms_good.quantity)
-                    stocks.save()
+                    try:
+                        good.save()
+                        # Заполняем остатки
+                        stocks = MoySkladDBStock(
+                            uuid=good,
+                            # Если по какой-то причине остаток товара в МойСклад отрицательный в БД сохраняем 0
+                            quantity=ms_good.quantity if ms_good.quantity >= 0 else 0
+                        )
+                        stocks.save()
+                    except Exception:
+                        a = 1
 
 
 class MoySkladDBStock(models.Model):
