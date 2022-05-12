@@ -1,5 +1,4 @@
 """В модуле хранятся описание классов."""
-import string
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union, NamedTuple
@@ -59,7 +58,7 @@ class GoodsType(Enum):
 
 
 class Attributes(BaseModel):
-    """Класс описывает поле аттрибутов. В аттрибутах храняться: признак розлива и признак алкогольной продукции."""
+    """Класс описывает поле аттрибутов. В аттрибутах хранятся: признак розлива и признак алкогольной продукции."""
     name: str
     value: Union[bool, str]
 
@@ -69,7 +68,7 @@ class Price(BaseModel):
 
 
 class Modification(BaseModel):
-    """"Класс описывает поле модификации в сервисе. В JSON представлении - атрибут 'characteristics'."""
+    """Класс описывает поле модификации в сервисе. В JSON представлении - атрибут 'characteristics'."""
     name: str
     value: str
 
@@ -100,7 +99,7 @@ class Good(BaseModel):
     price: List[Price] = Field(alias='salePrices')
     # Поле модификации в карточке товара
     modifications: Optional[List[Modification]] = Field(alias='characteristics')
-    # Ссылка на родильский товар. Применимо только для модификаций товаров
+    # Ссылка на родительский товар. Применимо только для модификаций товаров
     parent_good_href: Optional[ParentGood] = Field(alias='product')
     # Дополнительные, пользовательские аттрибуты для товара.
     # В текущей версии:
@@ -140,8 +139,10 @@ class Good(BaseModel):
         # Если товар - модификация
         # Alaska - Стаутский советник (Stout - Imperial / Double Milk. OG 16,5%, ABV 10,5%) (Банка 0,33)
         if full_name.find('(Да)') > -1 or\
-            full_name.find('Бакунин - Юбилейный (Stout - Imperial Milk / Sweet. OG 26%, ABV 13%, IBU 40) (ж/б)') > -1 or\
-            full_name.find('HopHead - Нимфоманка (Barleywine - English. OG 32%, ABV 13%, IBU 40) (ж.б 0,33)') > -1:
+            full_name.find('Coven - GLAM (Lager - IPL (India Pale Lager). ABV 5.5%, IBU 15)') > -1:
+            # full_name.find('ABC-Kölsch') > -1 or\
+            # full_name.find('Broken Pattern') > -1 or\
+            # full_name.find('Molson Coors (UK) - Carling Original (Lager - Pale. ABV 3,7%)') > -1:
             a = 1
         if self.modifications:
             capacity = _get_capacity(is_draft=is_draft,
@@ -184,9 +185,18 @@ class Good(BaseModel):
                 elif len(self.attributes) == 2:
                     is_draft = True if self.attributes[0].value.lower() == 'да' else False
                     is_alco = self.attributes[1].value
+
+        # Убираем все что в (...)
+        # Нужно учитывать случаи:
+        # Molson Coors (UK) - Carling Original (Lager - Pale. ABV 3,7%)
+
         # Если пиво разливное, нужно убрать (0,5) из наименования
         if is_draft:
             brewery_and_name = full_name.replace(' (0,5)', '')
+        else:
+            brewery_and_name = full_name
+
+        brewery_and_name = ' ('.join(brewery_and_name.split(' (')[:-1])
 
         # Получаем название пивоварни
         # Варианты наименований:
@@ -196,8 +206,10 @@ class Good(BaseModel):
         # вариант 4. Butch & Dutch - IPA 100 IBU (0,5) (IPA - International. ABV 7%, IBU 100)
         # вариант 5. Trappistes Rochefort 6 (Belgian Dubbel. ABV 7,5%, IBU 22)
         # вариант 6. Fournier - Frères Producteurs - Eleveurs - Cidre Rose (Cider - Rose. ABV 3%)
-        # Убираем все что в (...)
-        brewery_and_name = full_name.split(' (')[0]
+        #            (     наименование сидрерии )
+        # вариант 7. Shepherd Neame           - Classic Collection - India Pale Ale (IPA - English. OG 14,62%, ABV 6,1%)
+        #            (наименование пивоварни)
+
         # Если вариант 3 или 5
         if len(brewery_and_name.split(' - ')) == 1:
             # Если модификация, то папка будет пустой, а parent_id будет содержать uuid родительского товара
@@ -208,10 +220,13 @@ class Good(BaseModel):
         elif len(brewery_and_name.split(' - ')) == 2:
             brewery = brewery_and_name.split(' - ')[0]
             name = brewery_and_name.split(' - ')[1]
-        # Вариант 6
+        # Вариант 6 и вариант 7
+        # Наименование пивоварни берем из родительской папки
         else:
-            brewery = ' - '.join(brewery_and_name.split(' - ')[:-1])
-            name = brewery_and_name.split(' - ')[-1]
+            brewery = self.path_name.split('/')[-1]
+            # brewery = ' - '.join(brewery_and_name.split(' - ')[:-1])
+            # name = brewery_and_name.split(' - ')[-1]
+            name = brewery_and_name.replace(f'{brewery} - ', '')
         brewery = brewery.title()
         name = string_title(name)
 
@@ -219,6 +234,12 @@ class Good(BaseModel):
             # Убираем пивоварню из полного имени
             additional_info = full_name.split(' (')[-1].replace(')', '')
             # Получаем стиль пива/сидра
+            # Будут встречаться варианты:
+            # Вариант 1:
+            # Brewlok - DOS (Stout - Imperial Oatmeal. OG 24%, ABV 8,6%)
+            # Вариант 2:
+            # Coven - GLAM (Lager - IPL (India Pale Lager). ABV 5.5%, IBU 15)
+            #
             style = additional_info.split('.')[0]
             # Если в стиле указа ни сидр, то это сидр
             if style.lower().find('cider') != -1:
