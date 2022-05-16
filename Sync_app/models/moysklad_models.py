@@ -72,9 +72,7 @@ class MoySkladDBGood(models.Model):
                 # (разливное пиво заведено как отдельный товар с припиской (0,5),
                 # а 1л - комплект из двух товаров 0,5
                 if ms_good.quantity is not None:
-                    parsed_name = ms_good.parse_object
-                    # if ms_good.id == 'a401643a-7c08-11eb-0a80-08fe000a5fdb':
-                    #     a = 1
+                    parsed_name = ms_good.parse_object()
                     # Проверяем есть запись в таблице емкостей
                     try:
                         capacity = Capacity.objects.get(capacity=parsed_name.capacity)
