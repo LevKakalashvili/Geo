@@ -2,7 +2,7 @@ set @brewery_ = 'Brabandere';
 set @name_ = 'Fruh Kolsch';
 set @egais_code_ = '0000000000036085093';
 
--- Найти определнный товар
+-- РќР°Р№С‚Рё РѕРїСЂРµРґРµР»РµРЅРЅС‹Р№ С‚РѕРІР°СЂ
 SELECT *
 FROM geo.sync_app_moyskladdbgood
 WHERE 
@@ -13,7 +13,7 @@ WHERE
 SELECT *
 FROM geo.sync_app_moyskladdbgood
 WHERE 
-	name = 'Нимфоманка';
+	name = 'РќРёРјС„РѕРјР°РЅРєР°';
 
 
 SELECT kmgood.egais_code, kmgood.full_name, cap.capacity
@@ -28,7 +28,7 @@ left join geo.sync_app_moyskladdbgood_egais_code as comp_table
 on kmgood.egais_code = comp_table.konturmarketdbgood_id
 where kmgood.egais_code = @egais_code_;
 
--- Найти все розливные напитки, досупные к продаже
+-- РќР°Р№С‚Рё РІСЃРµ СЂР°Р·Р»РёРІРЅС‹Рµ РЅР°РїРёС‚РєРё, РґРѕСЃС‚СѓРїРЅС‹Рµ Рє РїСЂРѕРґР°Р¶Рµ
 create or replace view get_availible_draft as
 select
 	sam.brewery,
@@ -44,7 +44,7 @@ where
  select *
  from get_availible_draft;
 
--- Показать доступные остатки товаров на складе (не розлив)
+-- РџРѕРєР°Р·Р°С‚СЊ РґРѕСЃС‚СѓРїРЅС‹Рµ РѕСЃС‚Р°С‚РєРё С‚РѕРІР°СЂРѕРІ РЅР° СЃРєР»Р°РґРµ (РЅРµ СЂРѕР·Р»РёРІ)
 create or replace view get_availible_goods_not_draft as
 select
 	sam.brewery,
@@ -62,7 +62,7 @@ order by sam.brewery, sam.name;
 select *
 from get_availible_goods_not_draft;
 
--- Таблица соотвествия (Все не связанные товары)
+-- РўР°Р±Р»РёС†Р° СЃРѕРѕС‚РІРµС‚СЃС‚РІРёСЏ (Р’СЃРµ РЅРµ СЃРІСЏР·Р°РЅРЅС‹Рµ С‚РѕРІР°СЂС‹)
 select
 	sam.uuid,
 	sam.brewery,
@@ -76,7 +76,7 @@ where
 		)
 ;
 
--- Таблица соотвествия (показать все товраы)
+-- РўР°Р±Р»РёС†Р° СЃРѕРѕС‚РІРµС‚СЃС‚РІРёСЏ (РїРѕРєР°Р·Р°С‚СЊ РІСЃРµ С‚РѕРІР°СЂС‹)
 select  sam.uuid,
 		sam.brewery,
 		sam.name,
@@ -88,7 +88,7 @@ on comp_table.moyskladdbgood_id = sam.uuid
 left join geo.sync_app_konturmarketdbgood sak
 on sak.egais_code = comp_table.konturmarketdbgood_id;
 
--- Таблица соотвествия (показать только приязанные товары)
+-- РўР°Р±Р»РёС†Р° СЃРѕРѕС‚РІРµСЃС‚РІРёСЏ (РїРѕРєР°Р·Р°С‚СЊ С‚РѕР»СЊРєРѕ РїСЂРёРІСЏР·Р°РЅРЅС‹Рµ С‚РѕРІР°СЂС‹)
 select 
 	sam.brewery,
 	sam.name,
@@ -101,7 +101,7 @@ left join geo.sync_app_konturmarketdbgood sak
 on sak.egais_code = comp_table.konturmarketdbgood_id
 order by sam.brewery, sam.name, sak.egais_code;
 
--- Поиск дубликатов
+-- РџРѕРёСЃРє РґСѓР±Р»РёРєР°С‚РѕРІ
 select *, COUNT(*) AS cnt
 from geo.sync_app_moyskladdbgood as msgood
 where path_name <> ""
