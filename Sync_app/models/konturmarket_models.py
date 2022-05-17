@@ -26,7 +26,6 @@ class KonturMarketDBProducer(models.Model):
                                   help_text='Короткое наименование производителя')
 
     full_name = models.CharField(max_length=255,
-                                 # unique=True,
                                  help_text='Полное наименование производителя')
 
 
@@ -55,9 +54,6 @@ class KonturMarketDBGood(models.Model):
 
     # Объем продукции. Если не указан, то считаем, что позиция разливная и нужно выставить флаг,
     # что объем расчетный
-    # capacity = models.FloatField(db_column='capacity',
-    #                              null=True,
-    #                              help_text='Объем алкогольной продукции')
     capacity = models.ForeignKey(Capacity,
                                  help_text='Емкость тары',
                                  db_column='capacity',
@@ -65,12 +61,6 @@ class KonturMarketDBGood(models.Model):
 
     # Объем продукции. Если не указан, то считаем, что позиция разливная и нужно выставить флаг,
     # что объем расчетный
-    # is_calculated = models.BooleanField(db_column='is_calculated',
-    #                                     # По умолчанию ставим в False
-    #                                     default=False,
-    #                                     help_text='Признак того, что объем был рассчитан, а не прочитан из '
-    #                                               'Контур.Маркет')
-
     # Признак разливной продукции. Рассчитываемый параметр: если capacity > 1л, то принимаем что товар разливной -
     # объем расчетный
     is_draft = models.BooleanField(db_column='is_draft',
@@ -80,12 +70,12 @@ class KonturMarketDBGood(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=['egais_code', ]),
-            models.Index(fields=['full_name', ]),
+            models.Index(fields=['egais_code', ]),   # noqa: C819
+            models.Index(fields=['full_name', ]),  # noqa: C819
         ]
 
     @staticmethod
-    def save_objects_to_db(list_km_goods: List[StockEGAIS]):
+    def save_objects_to_db(list_km_goods: List[StockEGAIS]) -> None:
         """Метод сохранения данных о товарах в БД."""
         if list_km_goods:
             km_good: StockEGAIS
@@ -93,7 +83,7 @@ class KonturMarketDBGood(models.Model):
                 producer = KonturMarketDBProducer(fsrar_id=km_good.good.brewery.fsrar_id,
                                                   inn=km_good.good.brewery.inn,
                                                   short_name=km_good.good.brewery.short_name,
-                                                  full_name=km_good.good.brewery.full_name
+                                                  full_name=km_good.good.brewery.full_name,
                                                   )
 
                 # Если нет объема продукции, то считаем, что товар разливной, объемом 99 л
@@ -119,7 +109,7 @@ class KonturMarketDBGood(models.Model):
                                           full_name=km_good.good.name,
                                           fsrar_id=producer,
                                           capacity=capacity,
-                                          is_draft=True if (capacity.capacity > 10) else False
+                                          is_draft=True if (capacity.capacity > 10) else False,
                                           )
 
                 stock = KonturMarketDBStock(quantity=km_good.quantity_2,
@@ -135,7 +125,7 @@ class KonturMarketDBStock(models.Model):
 
     # Количество товара на складе
     quantity = models.PositiveSmallIntegerField(help_text='Остаток товара на остатках в ЕГАИС на 2ом регистре',
-                                                null=True
+                                                null=True,
                                                 )
 
     # Код алкогольной продукции
