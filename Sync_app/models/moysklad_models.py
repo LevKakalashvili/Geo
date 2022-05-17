@@ -41,11 +41,13 @@ class MoySkladDBGood(models.Model):
     # Горечь
     ibu = models.PositiveSmallIntegerField(help_text='Горечь')
     # Признак алкогольной продукции
-    is_alco = models.BooleanField(help_text='Признак алкогольного напитка')
+    is_alco = models.BooleanField(help_text='Признак алкогольного напитка', default=False)
     # Признак разливного пива
-    is_draft = models.BooleanField(help_text='Признак разливного пива')
+    is_draft = models.BooleanField(help_text='Признак разливного пива', default=False)
     # Признак сидр или нет
-    is_cider = models.BooleanField(help_text='Признак сидра')
+    is_cider = models.BooleanField(help_text='Признак сидра', default=False)
+    # Признак пиво или нет
+    is_beer = models.BooleanField(help_text='Признак пива', default=False)
     # Емкость тары
     capacity = models.ForeignKey(Capacity,
                                  help_text='Емкость тары',
@@ -82,7 +84,7 @@ class MoySkladDBGood(models.Model):
 
                     # Заполняем товар
                     good = MoySkladDBGood(
-                        uuid=ms_good._id,
+                        uuid=ms_good.good_id,
                         parent_uuid=ms_good.parent_id,
                         full_name=ms_good.name,
                         # Если модификация товара
@@ -98,6 +100,7 @@ class MoySkladDBGood(models.Model):
                         is_cider=parsed_name.is_cider,
                         style=parsed_name.style,
                         capacity=capacity,
+                        is_beer=parsed_name.is_beer,
                     )
                     good.save()
                     # Заполняем остатки
