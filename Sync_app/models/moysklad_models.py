@@ -47,7 +47,6 @@ class MoySkladDBGood(models.Model):
     # Признак сидр или нет
     is_cider = models.BooleanField(help_text='Признак сидра')
     # Емкость тары
-    # capacity = models.FloatField(default=0.0, help_text='Емкость тары')
     capacity = models.ForeignKey(Capacity,
                                  help_text='Емкость тары',
                                  db_column='capacity',
@@ -64,7 +63,7 @@ class MoySkladDBGood(models.Model):
         ]
 
     @staticmethod
-    def save_objects_to_db(list_ms_goods: List[MoySkladGood]):
+    def save_objects_to_db(list_ms_goods: List[MoySkladGood]) -> None:
         """Метод сохраняет объекты, созданные на основе списка list_ms_goods в БД."""
         if list_ms_goods:
             for ms_good in list_ms_goods:
@@ -83,7 +82,7 @@ class MoySkladDBGood(models.Model):
 
                     # Заполняем товар
                     good = MoySkladDBGood(
-                        uuid=ms_good.id,
+                        uuid=ms_good._id,
                         parent_uuid=ms_good.parent_id,
                         full_name=ms_good.name,
                         # Если модификация товара
@@ -98,19 +97,16 @@ class MoySkladDBGood(models.Model):
                         is_draft=parsed_name.is_draft,
                         is_cider=parsed_name.is_cider,
                         style=parsed_name.style,
-                        capacity=capacity
+                        capacity=capacity,
                     )
-                    try:
-                        good.save()
-                        # Заполняем остатки
-                        stocks = MoySkladDBStock(
-                            uuid=good,
-                            # Если по какой-то причине остаток товара в МойСклад отрицательный в БД сохраняем 0
-                            quantity=ms_good.quantity if ms_good.quantity >= 0 else 0
-                        )
-                        stocks.save()
-                    except Exception:
-                        a = 1
+                    good.save()
+                    # Заполняем остатки
+                    stocks = MoySkladDBStock(
+                        uuid=good,
+                        # Если по какой-то причине остаток товара в МойСклад отрицательный в БД сохраняем 0
+                        quantity=ms_good.quantity if ms_good.quantity >= 0 else 0,
+                    )
+                    stocks.save()
 
 
 class MoySkladDBStock(models.Model):
