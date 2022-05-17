@@ -1,6 +1,7 @@
 """ В модуле хранятся url'ы для сервиса Конутр.Маркет https://market.kontur.ru/."""
 from enum import Enum
-from typing import Dict, NamedTuple
+from typing import Dict
+from typing import NamedTuple
 
 AUTH_URL = 'https://auth.kontur.ru/api/authentication/password/auth-by-password'
 EGAIS_ASSORTMENT_URL = 'https://market.kontur.ru/api/v105/a095a331-45ed-444e-8977-0a1eb28fee92/ae2fa6c7-dcbb-4c0b' \
