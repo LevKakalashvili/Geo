@@ -22,11 +22,6 @@ def db_set_matches(googlesheets_copm_table: list[list[str]]) -> list[list[str]]:
     km_db_good: KonturMarketDBGood
 
     for gs_row in googlesheets_copm_table:
-        # if gs_row[0] == 'Big Village - Futurology':
-        #     a = 1
-        if len(gs_row) > 1 and gs_row[1] == '0000000000040233242':
-            a = 1
-
         # Если в таблице соответствия из googlesheets, не установлено соответствие - второй элемент gs_good[1]
         # будет пустой, то пропускаем строку.
         if len(gs_row) > 1:
@@ -83,13 +78,7 @@ def db_set_matches(googlesheets_copm_table: list[list[str]]) -> list[list[str]]:
             else:
                 # Добавляем связь между товарами МойСклад и товарами из ЕГАИС
                 ms_db_good[0].egais_code.add(km_db_good)
-                # try:
-                #     # Добавляем связь между товарами МойСклад и товарами из ЕГАИС
-                #     ms_db_good[0].egais_code.add(km_db_good)
-                # except Exception:
-                #     a = 1
         else:
-            # gs_row.append('Нет кода алкогольной продукции')
             not_proceeded_good.append(gs_row)
 
     return not_proceeded_good
