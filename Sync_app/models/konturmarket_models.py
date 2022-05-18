@@ -120,7 +120,7 @@ class KonturMarketDBGood(models.Model):
                 full_name=km_good.good.name,
                 fsrar_id=producer,
                 capacity=capacity,
-                is_draft=True if (capacity.capacity > 10) else False,
+                is_draft=capacity.capacity > 10,
             )
 
             stock = KonturMarketDBStock(

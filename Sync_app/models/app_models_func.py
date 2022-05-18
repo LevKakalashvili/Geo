@@ -18,7 +18,7 @@ def db_set_matches(googlesheets_copm_table: list[list[str]]) -> list[list[str]]:
         return []
 
     not_proceeded_good = []
-    ms_db_good: List[MoySkladDBGood]
+    ms_db_good: QuerySet
     km_db_good: KonturMarketDBGood
 
     for gs_row in googlesheets_copm_table:
