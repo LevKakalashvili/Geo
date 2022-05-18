@@ -20,7 +20,7 @@ class UrlType(Enum):
     EGAIS_ASSORTMENT = 2
 
 
-class Url(NamedTuple):
+class KonturMarketUrl(NamedTuple):
     """Класс в котором описываются url, заголовки и cookies для передачи в запросе к сервису Контур.Маркет."""
 
     url: str  # Url для запроса в сервис.
@@ -35,19 +35,19 @@ class Url(NamedTuple):
     }
 
 
-def get_url(url_type: UrlType) -> Url:
+def get_url(url_type: UrlType) -> KonturMarketUrl:
     """Метод для получения url.
     :param url_type: UrlType.login - url для авторизации в сервисе, UrlType.egais_assortment - url для списка ЕГАИС
     наименований.
     :returns: Возвращается объект Url
     """
 
-    url: Url
+    url: KonturMarketUrl
 
     if url_type == UrlType.LOGIN:
         # Возвращаем ссылку на форму для авторизации в сервисе
-        url = Url(url=AUTH_URL)
+        url = KonturMarketUrl(url=AUTH_URL)
     elif url_type == UrlType.EGAIS_ASSORTMENT:
         # Возвращаем ссылку на раздел в Товары/Пиво в сервисе Конутр.Маркет
-        url = Url(url=EGAIS_ASSORTMENT_URL)
+        url = KonturMarketUrl(url=EGAIS_ASSORTMENT_URL)
     return url

@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from pydantic import Field
 
 import Sync_app.privatedata.kontrurmarket_privatedata as km_pvdata
-from Sync_app.konturmarket.konturmarket_urls import Url
+from Sync_app.konturmarket.konturmarket_urls import KonturMarketUrl
 from Sync_app.konturmarket.konturmarket_urls import UrlType
 from Sync_app.konturmarket.konturmarket_urls import get_url
 
@@ -82,7 +82,7 @@ class KonturMarket:
     def get_egais_assortment() -> List[GoodEGAIS]:
         """Метод возвращает список инстансов GoodEGAIS, полученных из сервиса."""
         goods_list: List[GoodEGAIS] = []
-        url: Url = get_url(UrlType.EGAIS_ASSORTMENT)
+        url: KonturMarketUrl = get_url(UrlType.EGAIS_ASSORTMENT)
         response = session.get(url.url)
 
         goods = dict(response.json()).get("list")
@@ -108,7 +108,7 @@ class KonturMarket:
             "Remember": False,
         }
         # Пытаемся залогиниться на сайте
-        url: Url = get_url(UrlType.LOGIN)
+        url: KonturMarketUrl = get_url(UrlType.LOGIN)
         response = session.post(
             url=url.url,
             data=json.dumps(auth_data),

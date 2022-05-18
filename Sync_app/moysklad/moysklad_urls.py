@@ -31,7 +31,7 @@ class UrlType(Enum):
     ASSORTMENT = 3
 
 
-class Url(NamedTuple):
+class MoySkladUrl(NamedTuple):
     """Класс для описания запроса в сервис МойСклад."""
 
     url: str  # url для запроса в сервис
@@ -63,7 +63,7 @@ def get_url(
     start_period: datetime = datetime.today(),
     end_period: datetime = None,
     offset: int = 0,
-) -> Url:
+) -> MoySkladUrl:
     """Функция для получения url.
 
     :param _type: UrlType.token - url для получения токена, UrlType.retail_demand - url для получения розничны
@@ -78,12 +78,12 @@ def get_url(
     :returns: Возвращается объект Url
     :rtypes: Url
     """
-    url = Url("", {})
+    url = MoySkladUrl("", {})
 
     # если нужен url для запроса токен
     if _type == UrlType.TOKEN:
         # формируем url для запроса токена
-        url = Url(urljoin(JSON_URL, "security/token"), {})
+        url = MoySkladUrl(urljoin(JSON_URL, "security/token"), {})
 
     # если нужен url для запроса продаж
     elif _type == UrlType.RETAIL_DEMAND:
@@ -109,7 +109,7 @@ def get_url(
             "expand": "positions,positions.assortment",
             "limit": "100",
         }
-        url = Url(urljoin(JSON_URL, "entity/retaildemand"), request_filter)
+        url = MoySkladUrl(urljoin(JSON_URL, "entity/retaildemand"), request_filter)
     # # если нужен url для запроса ассортимента
     elif _type == UrlType.ASSORTMENT:
         request_filter: dict[str, Any] = {
@@ -118,5 +118,5 @@ def get_url(
             ],
             "offset": offset,
         }
-        url = Url(urljoin(JSON_URL, "entity/assortment"), request_filter)
+        url = MoySkladUrl(urljoin(JSON_URL, "entity/assortment"), request_filter)
     return url
