@@ -2,12 +2,7 @@
 import re
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any
-from typing import Dict
-from typing import List
-from typing import NamedTuple
-from typing import Optional
-from typing import Union
+from typing import Dict, List, NamedTuple, Optional, Union, Any, Tuple
 
 import Sync_app.moysklad.moysklad_urls as ms_urls
 import Sync_app.privatedata.moysklad_privatedata as ms_pvdata
@@ -118,7 +113,7 @@ class Good(BaseModel):
     volume: Optional[float]
 
     @property
-    def parent_id(self):
+    def parent_id(self) -> str:
         """Свойство возвращает uuid родительский товар."""
         if self.parent_good_href:
             # Ссылка на товар хранится в виде
@@ -129,7 +124,7 @@ class Good(BaseModel):
     def parse_object(self) -> GoodTuple:
         """Метод возвращает объект типа GoodTuple."""
         if not self:
-            return None
+            return GoodTuple()
 
         good = self._parse_object()
 
@@ -149,14 +144,14 @@ class Good(BaseModel):
             is_cider = bev_type.cider
             is_beer = bev_type.beer
             abv = _get_characteristics(
-                _type=Characteristics.ABV, add_info=additional_info
+                type_=Characteristics.ABV, add_info=additional_info
             )
             is_alco = True if abv > 1 else False
             og = _get_characteristics(
-                _type=Characteristics.OG, add_info=additional_info
+                type_=Characteristics.OG, add_info=additional_info
             )
             ibu = _get_characteristics(
-                _type=Characteristics.IBU, add_info=additional_info
+                type_=Characteristics.IBU, add_info=additional_info
             )
             brewery = _get_brewery(
                 f_name=full_name, add_info=additional_info, parent_path=self.path_name
@@ -176,14 +171,14 @@ class Good(BaseModel):
                 style=style,
                 og=og,
                 abv=abv,
-                ibu=ibu,
+                ibu=int(ibu),
                 is_alco=is_alco,
                 is_cider=is_cider,
                 is_beer=is_beer,
                 is_draft=is_draft,
                 capacity=capacity,
             )
-        return None
+        return GoodTuple()
 
 
 @dataclass()
@@ -219,7 +214,7 @@ class MoySklad:
             self._token = ms_pvdata.TOKEN
         return True
 
-    def get_assortment(self) -> Good:
+    def get_assortment(self) -> List[Good]:
         """Функция получения ассортимента товаров."""
         if not self._token:
             return []
@@ -232,6 +227,8 @@ class MoySklad:
 
         need_request: bool = True
         goods: List[Good] = []
+        converted_goods: List[Good] = []
+
         while need_request:
             # Получаем url для отправки запроса в сервис
             url: ms_urls.MoySkladUrl = ms_urls.get_url(
@@ -254,24 +251,22 @@ class MoySklad:
             # Добавляем новые товары к существующим, расширяем список
             goods.extend(rows)
 
-            converted_goods: List[Good] = []
-
         for good in goods:
             converted_goods.append(Good(**good))
 
         return converted_goods
 
 
-_TRASH: tuple = (
+_TRASH: Tuple = (
     " (0,75)",
     " (0,33)",
     " Бутылка 0,75",
-    " ж\б",  # noqa: W605
+    " ж\б",
     " (ж/б)",
     " (0,5)",
 )
 
-_MODIFICATION_SET: dict = {
+_MODIFICATION_SET: Dict = {
     "Банка 0,33": 0.33,
     "Банка 0,45": 0.45,
     "Бутылка 0,33": 0.33,
@@ -335,7 +330,7 @@ def _get_capacity(cap: float = None, modification: Dict = None) -> float:
 
 
 class Characteristics(Enum):
-    """Перчисление используемое для получение характристик продукта при парсинге строки продукта."""
+    """Перечисление используемое для получения характеристик продукта при парсинге строки продукта."""
 
     ABV = "abv"
     OG = "og"
@@ -383,30 +378,26 @@ def _get_style(add_info: str = "") -> str:
     return ""
 
 
-def _get_characteristics(_type: Characteristics, add_info: str = "") -> float:
-    """Метод возвращает число - количественный параметр, выбранный из параметра add_info в зависимости от переданного параметра _type.
+def _get_characteristics(type_: Characteristics, add_info: str = "") -> float:
+    """Метод возвращает число - количественный параметр, выбранный из параметра add_info в зависимости от переданного параметра type_.
 
     Например:
-    _type = ABV
+    type_ = ABV
     add_info = 'Lager - IPL (India Pale Lager). ABV 5.5%, IBU 15'
     вернется 5.5
-    _type = IBU
+    type_ = IBU
     add_info = 'Lager - IPL (India Pale Lager). ABV 5.5%, IBU 15'
     вернется 15
-    _type = OG
+    type_ = OG
     add_info = 'Lager - IPL (India Pale Lager). ABV 5.5%, IBU 15'
     вернется 0
     """
-    if add_info:
-        if len(add_info.split(". ")) != 1:
-            for _info in add_info.split(". ")[1].split(", "):
-                if _info.lower().find(_type.value) != -1:
-                    return float(
-                        _info.lower()
-                        .replace(f"{_type.value} ", "")
-                        .replace(",", ".")
-                        .replace("%", "")
-                    )
+    if not add_info or ('. ' not in add_info):
+        return 0
+
+    for _info in add_info.split(". ")[1].split(", "):
+        if _info.lower().find(type_.value) != -1:
+            return float(_info.lower().replace(f"{type_.value} ", "").replace(",", ".").replace("%", ""))
     return 0
 
 
