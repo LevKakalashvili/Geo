@@ -66,8 +66,6 @@ def db_set_matches(googlesheets_copm_table: list[list[str]]) -> list[list[str]]:
 
                 # Если опять нашлось более одного товара, исключаем запись из обработки
                 if len(ms_db_good):
-                    if len(ms_db_good) > 1:
-                        a = 1
                     # Если нашлись совпадения
                     for element in ms_db_good:
                         element.egais_code.add(km_db_good)
