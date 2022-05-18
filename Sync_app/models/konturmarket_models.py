@@ -108,20 +108,12 @@ class KonturMarketDBGood(models.Model):
             capacity = None
             if km_good.good.capacity is None:
                 # Проверяем есть запись в таблице емкостей
-                try:
-                    capacity = Capacity.objects.get(capacity=99)
-                    # если такой записи все еще нет в таблице, то создаем ее
-                except ObjectDoesNotExist:
-                    capacity = Capacity(capacity=99)
-                    capacity.save()
+                # если такой записи все еще нет в таблице, то создаем ее
+                capacity = Capacity.objects.get_or_create(capacity=99)
             else:
                 # Проверяем есть запись в таблице емкостей
-                try:
-                    capacity = Capacity.objects.get(capacity=km_good.good.capacity)
-                    # если такой записи все еще нет в таблице, то создаем ее
-                except ObjectDoesNotExist:
-                    capacity = Capacity(capacity=km_good.good.capacity)
-                    capacity.save()
+                # если такой записи все еще нет в таблице, то создаем ее
+                capacity = Capacity.objects.get_or_create(capacity=km_good.good.capacity)
 
             good = KonturMarketDBGood(
                 egais_code=km_good.good.alco_code,
