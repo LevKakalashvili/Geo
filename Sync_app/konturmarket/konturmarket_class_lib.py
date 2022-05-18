@@ -85,13 +85,14 @@ class KonturMarket:
         url: KonturMarketUrl = get_url(UrlType.EGAIS_ASSORTMENT)
         response = session.get(url.url)
 
-        goods = dict(response.json()).get("list")
-        # Если получили успешный ответ и есть список товаров
-        if response.ok and goods:
-            # Проходим по всему списку товаров, наименований.
-            for good in goods:
-                # Получаем словарь с информацией о товаре
-                goods_list.append(StockEGAIS(**good))
+        if not response.ok:
+            return []
+
+        goods = response.json().get("list", [])
+        # Проходим по всему списку товаров, наименований.
+        for good in goods:
+            # Получаем словарь с информацией о товаре
+            goods_list.append(StockEGAIS(**good))
 
             # Сортировка по названию пивоварни
             goods_list = sorted(
