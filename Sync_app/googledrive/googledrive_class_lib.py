@@ -9,7 +9,7 @@ import googleapiclient.discovery
 import httplib2
 from oauth2client.service_account import ServiceAccountCredentials
 
-import Sync_app.googledrive.googlesheets_vars as gs_vars
+import Sync_app.googledrive.googlesheets_constants as gs_const
 from Sync_app.common.functions import string_title
 
 
@@ -61,9 +61,9 @@ class GoogleSheets:
             os.path.join(
                 os.path.dirname(os.path.dirname(__file__)),  # путь до /privatedata
                 "privatedata",
-                gs_vars.CREDENTIALS_FILE,
+                gs_const.CREDENTIALS_FILE,
             ),
-            [gs_vars.SPREEDSHEETS_URL, gs_vars.GDRIVE_URL],
+            [gs_const.SPREEDSHEETS_URL, gs_const.GDRIVE_URL],
         )
         http_auth = credentials.authorize(httplib2.Http())
         self.service = googleapiclient.discovery.build("sheets", "v4", http=http_auth)
