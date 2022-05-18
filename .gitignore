@@ -49,3 +49,4 @@ pyvenv.cfg
  **/migrations/**
  !**/migrations
  !**/migrations/__init__.py
+/Sync_app/privatedata/
