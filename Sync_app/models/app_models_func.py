@@ -77,7 +77,7 @@ def db_set_matches(googlesheets_copm_table: list[list[str]]) -> list[list[str]]:
             # Если товар найден
             else:
                 # Добавляем связь между товарами МойСклад и товарами из ЕГАИС
-                ms_db_good[0].egais_code.add(km_db_good)
+                ms_db_good.first().egais_code.add(km_db_good)
         else:
             not_proceeded_good.append(gs_row)
 
