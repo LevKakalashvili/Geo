@@ -25,8 +25,7 @@ def db_set_matches(googlesheets_copm_table: list[list[str]]) -> list[list[str]]:
         # Если в таблице соответствия из googlesheets, не установлено соответствие - второй элемент gs_good[1]
         # будет пустой, то пропускаем строку.
         if len(gs_row) > 1:
-            gs_good = CompilanceRow(commercial_name=gs_row[0],
-                                    egais_code=gs_row[1])
+            gs_good = CompilanceRow(commercial_name=gs_row[0], egais_code=gs_row[1])
 
             # В googlesheets указывается только фасованная продукция и не указывается разливное пиво
             km_db_good = KonturMarketDBGood.objects.get(egais_code=gs_good[1])
@@ -39,16 +38,17 @@ def db_set_matches(googlesheets_copm_table: list[list[str]]) -> list[list[str]]:
 
             # Проверяем на наличие в строке ' - '
             # Вариант 2:
-            if gs_good.brewery == '':
-                ms_db_good = MoySkladDBGood.objects.\
-                    filter(name=gs_good.name).\
-                    filter(is_draft=False)
+            if gs_good.brewery == "":
+                ms_db_good = MoySkladDBGood.objects.filter(name=gs_good.name).filter(
+                    is_draft=False
+                )
             # Вариант 1:
             else:
-                ms_db_good = MoySkladDBGood.objects.\
-                    filter(brewery=gs_good.brewery).\
-                    filter(name=gs_good.name).\
-                    filter(is_draft=False)
+                ms_db_good = (
+                    MoySkladDBGood.objects.filter(brewery=gs_good.brewery)
+                    .filter(name=gs_good.name)
+                    .filter(is_draft=False)
+                )
 
             # Если не нашли товар в таблице МойСклад
             if len(ms_db_good) == 0:
@@ -58,8 +58,9 @@ def db_set_matches(googlesheets_copm_table: list[list[str]]) -> list[list[str]]:
                 # Фильтруем по объему
                 ms_db_good = list(
                     filter(
-                        lambda element: element.capacity.capacity == km_db_good.capacity.capacity,
-                        ms_db_good
+                        lambda element: element.capacity.capacity
+                        == km_db_good.capacity.capacity,
+                        ms_db_good,
                     )
                 )
 

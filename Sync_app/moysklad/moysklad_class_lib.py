@@ -30,9 +30,9 @@ class GoodTuple(NamedTuple):
     )
     """
 
-    brewery: str = ''
-    name: str = ''
-    style: str = ''
+    brewery: str = ""
+    name: str = ""
+    style: str = ""
     og: float = 0.0
     abv: float = 0.0
     ibu: int = 0
@@ -80,7 +80,7 @@ class MetaParentGood(BaseModel):
     """Класс описывает метаданные родительского объекта, для случая когда используеться модификация товара."""
 
     # Ссылка на родительский товар
-    uuidhref: str = Field(alias='uuidHref')
+    uuidhref: str = Field(alias="uuidHref")
 
 
 class ParentGood(BaseModel):
@@ -94,7 +94,7 @@ class Good(BaseModel):
     """Класс описывает структуру товара в сервисе МОйСклад."""
 
     # Уникальный идентификатор товара
-    good_id: str = Field(alias='id')
+    good_id: str = Field(alias="id")
     # Наименование товара. Например Lux In Tenebris - Der Grusel (Sour - Gose
     # - Fruited. OG 11.5%, ABV 4,2%)
     name: str
@@ -102,19 +102,18 @@ class Good(BaseModel):
     quantity: Optional[int]
     # Имя папки товара. У модификаций этого аттрибута нет, но появляется
     # аттрибут 'characteristics'
-    path_name: Optional[str] = Field(alias='pathName')
+    path_name: Optional[str] = Field(alias="pathName")
     # Первый элемент списка - розничная цена * 100
-    price: List[Price] = Field(alias='salePrices')
+    price: List[Price] = Field(alias="salePrices")
     # Поле модификации в карточке товара
-    modifications: Optional[List[Modification]
-                            ] = Field(alias='characteristics')
+    modifications: Optional[List[Modification]] = Field(alias="characteristics")
     # Ссылка на родительский товар. Применимо только для модификаций товаров
-    parent_good_href: Optional[ParentGood] = Field(alias='product')
+    parent_good_href: Optional[ParentGood] = Field(alias="product")
     # Дополнительные, пользовательские аттрибуты для товара.
     # В текущей версии:
     # Розлив - да, нет
     # Алкогольная продукция - True, False
-    attributes: Optional[List[Attributes]] = Field(alias='attributes')
+    attributes: Optional[List[Attributes]] = Field(alias="attributes")
     # Объем продукции
     volume: Optional[float]
 
@@ -124,8 +123,8 @@ class Good(BaseModel):
         if self.parent_good_href:
             # Ссылка на товар хранится в виде
             # https://online.moysklad.ru/app/#good/edit?id=09f5f652-269e-11ec-0a80-02c5000e4cc9
-            return self.parent_good_href.meta.uuidhref.split('?id=')[1]
-        return ''
+            return self.parent_good_href.meta.uuidhref.split("?id=")[1]
+        return ""
 
     def parse_object(self) -> GoodTuple:
         """Метод возвращает объект типа GoodTuple."""
@@ -139,7 +138,8 @@ class Good(BaseModel):
     def _parse_object(self) -> GoodTuple:
         if self.name:
             full_name = _remove_modification_from_name(
-                name=self.name, modification=self.modifications)
+                name=self.name, modification=self.modifications
+            )
             full_name = _remove_trash_from_string(full_name)
 
             additional_info = _get_additional_info(f_name=full_name)
@@ -149,28 +149,26 @@ class Good(BaseModel):
             is_cider = bev_type.cider
             is_beer = bev_type.beer
             abv = _get_characteristics(
-                _type=Characteristics.ABV,
-                add_info=additional_info)
+                _type=Characteristics.ABV, add_info=additional_info
+            )
             is_alco = True if abv > 1 else False
             og = _get_characteristics(
-                _type=Characteristics.OG,
-                add_info=additional_info)
+                _type=Characteristics.OG, add_info=additional_info
+            )
             ibu = _get_characteristics(
-                _type=Characteristics.IBU,
-                add_info=additional_info)
+                _type=Characteristics.IBU, add_info=additional_info
+            )
             brewery = _get_brewery(
-                f_name=full_name,
-                add_info=additional_info,
-                parent_path=self.path_name)
+                f_name=full_name, add_info=additional_info, parent_path=self.path_name
+            )
             name = _get_name(
-                f_name=full_name,
-                add_info=additional_info,
-                brewery=brewery)
+                f_name=full_name, add_info=additional_info, brewery=brewery
+            )
 
             is_draft = _is_draft(attr=self.attributes)
             capacity = _get_capacity(
-                cap=dict(self).get('volume'),
-                modification=self.modifications)
+                cap=dict(self).get("volume"), modification=self.modifications
+            )
 
             return GoodTuple(
                 brewery=brewery,
@@ -194,7 +192,7 @@ class MoySklad:
 
     # токен для работы с сервисом
     # https://dev.moysklad.ru/doc/api/remap/1.2/#mojsklad-json-api-obschie-swedeniq-autentifikaciq
-    _token: str = ''
+    _token: str = ""
 
     def set_token(self, request_new: bool = True) -> bool:
         """Получение токена для доступа и работы с МС по JSON API 1.2. При успешном ответе возвращаем True, в случае ошибок False. https://dev.moysklad.ru/doc/api/remap/1.2/#mojsklad-json-api-obschie-swedeniq-autentifikaciq.
@@ -214,7 +212,7 @@ class MoySklad:
             # если получили ответ
             if response.ok:
                 # сохраняем токен
-                self._token = response.json()['access_token']
+                self._token = response.json()["access_token"]
             else:
                 return False
         else:
@@ -237,14 +235,14 @@ class MoySklad:
         while need_request:
             # Получаем url для отправки запроса в сервис
             url: ms_urls.Url = ms_urls.get_url(
-                ms_urls.UrlType.ASSORTMENT, offset=counter * 1000)
+                ms_urls.UrlType.ASSORTMENT, offset=counter * 1000
+            )
 
-            response = requests.get(
-                url.url, url.request_filter, headers=header)
+            response = requests.get(url.url, url.request_filter, headers=header)
             if not response.ok:
                 return []
 
-            rows: List[Any] = response.json().get('rows')
+            rows: List[Any] = response.json().get("rows")
             # Проверяем получили ли в ответе не пустой список товаров из
             # ассортимента
             if len(rows) == 1000:
@@ -265,23 +263,23 @@ class MoySklad:
 
 
 _TRASH: tuple = (
-    ' (0,75)',
-    ' (0,33)',
-    ' Бутылка 0,75',
-    ' ж\б',  # noqa: W605
-    ' (ж/б)',
-    ' (0,5)',
+    " (0,75)",
+    " (0,33)",
+    " Бутылка 0,75",
+    " ж\б",  # noqa: W605
+    " (ж/б)",
+    " (0,5)",
 )
 
 _MODIFICATION_SET: dict = {
-    'Банка 0,33': 0.33,
-    'Банка 0,45': 0.45,
-    'Бутылка 0,33': 0.33,
-    'Бутылка 0,375': 0.375,
-    'Бутылка 0,5': 0.5,
-    'Бутылка 0,75': 0.75,
-    'ж.б 0,33': 0.33,
-    'ж/б 0,5': 0.5,
+    "Банка 0,33": 0.33,
+    "Банка 0,45": 0.45,
+    "Бутылка 0,33": 0.33,
+    "Бутылка 0,375": 0.375,
+    "Бутылка 0,5": 0.5,
+    "Бутылка 0,75": 0.75,
+    "ж.б 0,33": 0.33,
+    "ж/б 0,5": 0.5,
 }
 
 
@@ -300,23 +298,23 @@ def _is_draft(attr: Dict = None) -> bool:
     # Если у товара определен аттрибут розлива
     if attr is not None:
         if len(attr) == 2:
-            is_draft = True if attr[0].value.lower() == 'да' else False
+            is_draft = True if attr[0].value.lower() == "да" else False
     return is_draft
 
 
 def _remove_trash_from_string(in_str: str) -> str:
     """Метод вырезает из входной строки мусор, определённый в кортеже _TRASH()."""
     for trash_element in _TRASH:
-        in_str = in_str.replace(trash_element, '')
+        in_str = in_str.replace(trash_element, "")
     return in_str
 
 
-def _remove_modification_from_name(name: str = '', modification=None) -> str:
+def _remove_modification_from_name(name: str = "", modification=None) -> str:
     """Метод удаляет из входной строки название модификации "Тара", определенных в _MODIFICATION_SET()."""
     if modification:
         for mod in modification:
-            if mod.name == 'Тара':
-                return name.replace(f' ({mod.value})', '')
+            if mod.name == "Тара":
+                return name.replace(f" ({mod.value})", "")
     return name
 
 
@@ -329,7 +327,7 @@ def _get_capacity(cap: float = None, modification: Dict = None) -> float:
     if cap is not None:
         return cap
 
-    if modification[0].name == 'Тара':
+    if modification[0].name == "Тара":
         for _capacity in _MODIFICATION_SET:
             if _capacity == modification[0].value:
                 capacity = float(_MODIFICATION_SET[_capacity])
@@ -339,9 +337,9 @@ def _get_capacity(cap: float = None, modification: Dict = None) -> float:
 class Characteristics(Enum):
     """Перчисление используемое для получение характристик продукта при парсинге строки продукта."""
 
-    ABV = 'abv'
-    OG = 'og'
-    IBU = 'ibu'
+    ABV = "abv"
+    OG = "og"
+    IBU = "ibu"
 
 
 class BeverageType(NamedTuple):
@@ -353,7 +351,7 @@ class BeverageType(NamedTuple):
     other: bool
 
 
-def _get_additional_info(f_name: str = '') -> str:
+def _get_additional_info(f_name: str = "") -> str:
     """Метод возвращает строку информации, содержащей стиль, плотность, содержание алкоголя.
 
     Например:
@@ -363,16 +361,16 @@ def _get_additional_info(f_name: str = '') -> str:
     """
     add_info: str
 
-    if f_name != '':
-        regex = r'\(([^()]*(?:\([^()]*\)[^()]*)*)\)$'
+    if f_name != "":
+        regex = r"\(([^()]*(?:\([^()]*\)[^()]*)*)\)$"
         matches = re.findall(regex, f_name)
         if len(matches) != 0:
             add_info = matches[0]
             return add_info
-    return ''
+    return ""
 
 
-def _get_style(add_info: str = '') -> str:
+def _get_style(add_info: str = "") -> str:
     """Метод возвращает строку информации, содержащей стиль.
 
     Например:
@@ -380,12 +378,12 @@ def _get_style(add_info: str = '') -> str:
     'Lager - Pale. ABV 3,7%' вернется 'Lager - Pale',
     'Belgian Quadrupel. ABV 11%' вернется 'Belgian Quadrupel',
     """
-    if add_info != '':
-        return add_info.split('. ')[0]
-    return ''
+    if add_info != "":
+        return add_info.split(". ")[0]
+    return ""
 
 
-def _get_characteristics(_type: Characteristics, add_info: str = '') -> float:
+def _get_characteristics(_type: Characteristics, add_info: str = "") -> float:
     """Метод возвращает число - количественный параметр, выбранный из параметра add_info в зависимости от переданного параметра _type.
 
     Например:
@@ -400,16 +398,19 @@ def _get_characteristics(_type: Characteristics, add_info: str = '') -> float:
     вернется 0
     """
     if add_info:
-        if len(add_info.split('. ')) != 1:
-            for _info in add_info.split('. ')[1].split(', '):
+        if len(add_info.split(". ")) != 1:
+            for _info in add_info.split(". ")[1].split(", "):
                 if _info.lower().find(_type.value) != -1:
-                    return float(_info.lower().replace(
-                        f'{_type.value} ', '').replace(',', '.').replace('%', ''))
+                    return float(
+                        _info.lower()
+                        .replace(f"{_type.value} ", "")
+                        .replace(",", ".")
+                        .replace("%", "")
+                    )
     return 0
 
 
-def _get_brewery(f_name: str = '', add_info: str = '',
-                 parent_path: str = '') -> str:
+def _get_brewery(f_name: str = "", add_info: str = "", parent_path: str = "") -> str:
     """Метод возвращает название пивоварни, вырезанной из строки f_name.
 
     'Кер Сари Пшеничное (Wheat Beer - Other. ABV 4,5%)' вернет '',
@@ -418,17 +419,17 @@ def _get_brewery(f_name: str = '', add_info: str = '',
     'Fournier - Frères Producteurs - Eleveurs - Cidre Rose (Cider - Rose. ABV 3%)' вернет parent_path,
     'Shepherd Neame - Classic Collection - India Pale Ale (IPA - English. OG 14,6%, ABV 6,1%)' вернет parent_path
     """
-    brewery: str = ''
-    if add_info != '' and f_name != '':
-        f_name = f_name.replace(f' ({add_info})', '')
-        if f_name.count(' - ') == 1:
-            brewery = ''.join(f_name.split(' - ')[:-1])
+    brewery: str = ""
+    if add_info != "" and f_name != "":
+        f_name = f_name.replace(f" ({add_info})", "")
+        if f_name.count(" - ") == 1:
+            brewery = "".join(f_name.split(" - ")[:-1])
         elif parent_path is not None:
-            brewery = parent_path.split('/')[-1]
+            brewery = parent_path.split("/")[-1]
     return brewery
 
 
-def _get_name(f_name: str = '', add_info: str = '', brewery: str = '') -> str:
+def _get_name(f_name: str = "", add_info: str = "", brewery: str = "") -> str:
     """Метод возвращает название продукта, вырезанной из строки f_name.
 
     'Кер Сари Пшеничное (Wheat Beer - Other. ABV 4,5%)' вернет 'Кер Сари Пшеничное',
@@ -437,39 +438,23 @@ def _get_name(f_name: str = '', add_info: str = '', brewery: str = '') -> str:
     'Fournier - Frères Producteurs - Eleveurs - Cidre Rose (Cider - Rose. ABV 3%)' вернет '',
     'Shepherd Neame - Classic Collection - India Pale Ale (IPA - English. OG 14,6%, ABV 6,1%)' вернет ''
     """
-    name = ''
-    if add_info != '' and f_name != '':
-        name = f_name.replace(f' ({add_info})', '')
+    name = ""
+    if add_info != "" and f_name != "":
+        name = f_name.replace(f" ({add_info})", "")
         if brewery:
-            name = name.replace(f'{brewery} - ', '')
+            name = name.replace(f"{brewery} - ", "")
     return name
 
 
-def _get_good_type(add_info: str = '') -> BeverageType:
+def _get_good_type(add_info: str = "") -> BeverageType:
     """Метод возвращает тип продукта пиво, сидр, комбуча, вырезанной из строки add_info."""
-    if add_info != '':
-        if add_info.lower().find('cider') != -1:
-            bev_type = BeverageType(
-                beer=False,
-                cider=True,
-                kombucha=False,
-                other=False)
-        elif add_info.lower().find('kombucha') != -1:
-            bev_type = BeverageType(
-                beer=False,
-                cider=False,
-                kombucha=True,
-                other=False)
+    if add_info != "":
+        if add_info.lower().find("cider") != -1:
+            bev_type = BeverageType(beer=False, cider=True, kombucha=False, other=False)
+        elif add_info.lower().find("kombucha") != -1:
+            bev_type = BeverageType(beer=False, cider=False, kombucha=True, other=False)
         else:
-            bev_type = BeverageType(
-                beer=True,
-                cider=False,
-                kombucha=False,
-                other=False)
+            bev_type = BeverageType(beer=True, cider=False, kombucha=False, other=False)
     else:
-        bev_type = BeverageType(
-            beer=False,
-            cider=False,
-            kombucha=False,
-            other=True)
+        bev_type = BeverageType(beer=False, cider=False, kombucha=False, other=True)
     return bev_type

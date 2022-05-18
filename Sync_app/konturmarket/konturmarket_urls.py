@@ -3,9 +3,11 @@ from enum import Enum
 from typing import Dict
 from typing import NamedTuple
 
-AUTH_URL = 'https://auth.kontur.ru/api/authentication/password/auth-by-password'
-EGAIS_ASSORTMENT_URL = 'https://market.kontur.ru/api/v105/a095a331-45ed-444e-8977-0a1eb28fee92/ae2fa6c7-dcbb-4c0b' \
-                       '-b4e2-3d63bb6eabd5/055adf4b-e674-4dcd-9095-3e8c31785ac9/Rests/List'
+AUTH_URL = "https://auth.kontur.ru/api/authentication/password/auth-by-password"
+EGAIS_ASSORTMENT_URL = (
+    "https://market.kontur.ru/api/v105/a095a331-45ed-444e-8977-0a1eb28fee92/ae2fa6c7-dcbb-4c0b"
+    "-b4e2-3d63bb6eabd5/055adf4b-e674-4dcd-9095-3e8c31785ac9/Rests/List"
+)
 
 
 class UrlType(Enum):
@@ -24,14 +26,12 @@ class Url(NamedTuple):
     url: str  # Url для запроса в сервис.
 
     # Словарь cookies для передачи в запросе к сервису Контур.Маркет
-    cookies: Dict[str, str] = {
-        'AntiForgery': '78bc4821-5d13-4744-a103-1a762614ec22'
-    }
+    cookies: Dict[str, str] = {"AntiForgery": "78bc4821-5d13-4744-a103-1a762614ec22"}
 
     # Словарь заголовков для передачи в запросе к сервису Контур.Маркет.
     headers: Dict[str, str] = {
-        'Content-Type': 'application/json;charset=utf-8',
-        'X-CSRF-Token': '78bc4821-5d13-4744-a103-1a762614ec22',
+        "Content-Type": "application/json;charset=utf-8",
+        "X-CSRF-Token": "78bc4821-5d13-4744-a103-1a762614ec22",
     }
 
 

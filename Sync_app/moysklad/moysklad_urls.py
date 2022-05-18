@@ -8,12 +8,14 @@ from urllib.parse import urljoin
 
 import Sync_app.privatedata.moysklad_privatedata as ms_pvdata
 
-JSON_URL = 'https://online.moysklad.ru/api/remap/1.2/'  # ссылка для подключения к МС по JSON API 1.2
-BEER_FOLDER_ID = '8352f575-b4c1-11e7-7a34-5acf0009a77f'  # id папки "Пиво"
-GEO_ORG_ID = '0a405989-b28a-11e7-7a31-d0fd00338283'  # id юр. лица "География"
-GEO_ORG_HREF = JSON_URL + 'entity/organization/' + GEO_ORG_ID  # Ссылка на юр. лицо "География"
-GEO_SHOP_ID = '5057e2b5-b498-11e7-7a34-5acf0002684b'  # d розничной точки "География"
-GEO_SHOP_HREF = JSON_URL + 'entity/retailstore/' + GEO_SHOP_ID
+JSON_URL = "https://online.moysklad.ru/api/remap/1.2/"  # ссылка для подключения к МС по JSON API 1.2
+BEER_FOLDER_ID = "8352f575-b4c1-11e7-7a34-5acf0009a77f"  # id папки "Пиво"
+GEO_ORG_ID = "0a405989-b28a-11e7-7a31-d0fd00338283"  # id юр. лица "География"
+GEO_ORG_HREF = (
+    JSON_URL + "entity/organization/" + GEO_ORG_ID
+)  # Ссылка на юр. лицо "География"
+GEO_SHOP_ID = "5057e2b5-b498-11e7-7a34-5acf0002684b"  # d розничной точки "География"
+GEO_SHOP_HREF = JSON_URL + "entity/retailstore/" + GEO_SHOP_ID
 
 
 class UrlType(Enum):
@@ -36,7 +38,7 @@ class Url(NamedTuple):
     request_filter: Dict[str, Any]  # словарь для фильтров
 
 
-def get_headers(token: str = '') -> Dict[str, Any]:
+def get_headers(token: str = "") -> Dict[str, Any]:
     """Метод получения словаря заголовков для передачи в запросе к сервису МойСклад.
 
     :return:
@@ -46,17 +48,22 @@ def get_headers(token: str = '') -> Dict[str, Any]:
     headers: Dict[str, Any]
     if token:
         headers = {
-            'Content-Type': 'application/json',
-            'Lognex-Pretty-Print-JSON': 'true',
-            'Authorization': 'Bearer ' + token}
+            "Content-Type": "application/json",
+            "Lognex-Pretty-Print-JSON": "true",
+            "Authorization": "Bearer " + token,
+        }
     else:
-        pvd = f'{ms_pvdata.USER}:{ms_pvdata.PASSWORD}'.encode()
-        headers = dict(Authorization=f'Basic{base64.b64encode(pvd)}')
+        pvd = f"{ms_pvdata.USER}:{ms_pvdata.PASSWORD}".encode()
+        headers = dict(Authorization=f"Basic{base64.b64encode(pvd)}")
     return headers
 
 
-def get_url(_type: UrlType, start_period: datetime = datetime.today(), end_period: datetime = None, offset: int = 0) -> \
-        Url:
+def get_url(
+    _type: UrlType,
+    start_period: datetime = datetime.today(),
+    end_period: datetime = None,
+    offset: int = 0,
+) -> Url:
     """Функция для получения url.
 
     :param _type: UrlType.token - url для получения токена, UrlType.retail_demand - url для получения розничны
@@ -71,12 +78,12 @@ def get_url(_type: UrlType, start_period: datetime = datetime.today(), end_perio
     :returns: Возвращается объект Url
     :rtypes: Url
     """
-    url = Url('', {})
+    url = Url("", {})
 
     # если нужен url для запроса токен
     if _type == UrlType.TOKEN:
         # формируем url для запроса токена
-        url = Url(urljoin(JSON_URL, 'security/token'), {})
+        url = Url(urljoin(JSON_URL, "security/token"), {})
 
     # если нужен url для запроса продаж
     elif _type == UrlType.RETAIL_DEMAND:
@@ -92,21 +99,24 @@ def get_url(_type: UrlType, start_period: datetime = datetime.today(), end_perio
         # по 100 продаж за ответ, чтобы получить следующую страницу, нежно формировать новый запрос со смещением
         # offset=200, следующий offset-300 и т.д. В данной реализации это не учтено, т.к. больше 100 продаж не выявлено
         request_filter: dict[str, Any] = {
-            'filter': [
-                f'organization={JSON_URL}entity/organization/{GEO_ORG_ID}',
-                f'assortment={JSON_URL}entity/productfolder/{BEER_FOLDER_ID}',
+            "filter": [
+                f"organization={JSON_URL}entity/organization/{GEO_ORG_ID}",
+                f"assortment={JSON_URL}entity/productfolder/{BEER_FOLDER_ID}",
                 date_filter_from,
-                date_filter_to],
-            'offset': '0',
-            'expand': 'positions,positions.assortment',
-            'limit': '100'}
-        url = Url(urljoin(JSON_URL, 'entity/retaildemand'), request_filter)
+                date_filter_to,
+            ],
+            "offset": "0",
+            "expand": "positions,positions.assortment",
+            "limit": "100",
+        }
+        url = Url(urljoin(JSON_URL, "entity/retaildemand"), request_filter)
     # # если нужен url для запроса ассортимента
     elif _type == UrlType.ASSORTMENT:
         request_filter: dict[str, Any] = {
-            'filter': [
-                f'productFolder={JSON_URL}entity/productfolder/{BEER_FOLDER_ID}'],
-            'offset': offset
+            "filter": [
+                f"productFolder={JSON_URL}entity/productfolder/{BEER_FOLDER_ID}"
+            ],
+            "offset": offset,
         }
-        url = Url(urljoin(JSON_URL, 'entity/assortment'), request_filter)
+        url = Url(urljoin(JSON_URL, "entity/assortment"), request_filter)
     return url

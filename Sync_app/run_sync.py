@@ -13,7 +13,7 @@ from Sync_app.models.konturmarket_models import KonturMarketDBGood as db_km_good
 from Sync_app.models.moysklad_models import MoySkladDBGood as db_ms_good
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Получаем ассортимент из МойСклад
     ms_goods = ms.get_assortment()
 
@@ -29,10 +29,8 @@ if __name__ == '__main__':
     compl_table: List[List[str]] = googlesheets.get_data(
         spreadsheets_id=gs_vars.SPREEDSHEET_ID_EGAIS,
         list_name=gs_vars.LIST_NAME_EGAIS,
-        list_range=f'{gs_vars.FIRST_CELL_EGAIS}:{gs_vars.LAST_COLUMN_EGAIS}'
-        )
+        list_range=f"{gs_vars.FIRST_CELL_EGAIS}:{gs_vars.LAST_COLUMN_EGAIS}",
+    )
     # Оставляем только коммерческое название и код алкогольной продукции
-    compl_table = [i[:len(i):2] for i in compl_table]
+    compl_table = [i[: len(i) : 2] for i in compl_table]
     a = db_func.db_set_matches(googlesheets_copm_table=compl_table)
-    # a = db_ms_good.objects.all()
-    b = 1

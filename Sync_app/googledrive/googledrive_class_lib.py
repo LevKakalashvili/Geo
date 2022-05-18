@@ -13,9 +13,8 @@ import Sync_app.googledrive.googlesheets_vars as gs_vars
 from Sync_app.common.functions import string_title
 
 
-
 class CompilanceRow(NamedTuple):
-    """Вспомогательный класс для хранения записи из таблицы соответствия, описанной в googlesheets.""" # pylint: disable=line-too-long
+    """Вспомогательный класс для хранения записи из таблицы соответствия, описанной в googlesheets."""  # pylint: disable=line-too-long
 
     commercial_name: str
     egais_code: str
@@ -23,17 +22,21 @@ class CompilanceRow(NamedTuple):
     @property
     def brewery(self) -> str:
         """Название пивоварни."""
-        return self.commercial_name.split(' - ')[0] if len(self.commercial_name.split(' - ')) > 1 else ''
+        return (
+            self.commercial_name.split(" - ")[0]
+            if len(self.commercial_name.split(" - ")) > 1
+            else ""
+        )
 
     @property
     def name(self) -> str:
         """Название продукта."""
-        _len = len(self.commercial_name.split(' - '))
+        _len = len(self.commercial_name.split(" - "))
         name: str
         if _len == 1:
             name = self.commercial_name
         else:
-            name = ''.join(self.commercial_name.split(' - ')[1:])
+            name = "".join(self.commercial_name.split(" - ")[1:])
 
         return string_title(_str=name)
 
@@ -55,17 +58,22 @@ class GoogleSheets:
         # Авторизуемся и получаем service — экземпляр доступа к API
         credentials = ServiceAccountCredentials.from_json_keyfile_name(
             # все приватные данные храним в папке /Sync_app/privatedata
-            os.path.join(os.path.dirname(os.path.dirname(__file__)),  # путь до /privatedata
-                         'privatedata',
-                         gs_vars.CREDENTIALS_FILE),
-            [gs_vars.SPREEDSHEETS_URL, gs_vars.GDRIVE_URL])
+            os.path.join(
+                os.path.dirname(os.path.dirname(__file__)),  # путь до /privatedata
+                "privatedata",
+                gs_vars.CREDENTIALS_FILE,
+            ),
+            [gs_vars.SPREEDSHEETS_URL, gs_vars.GDRIVE_URL],
+        )
         http_auth = credentials.authorize(httplib2.Http())
-        self.service = googleapiclient.discovery.build('sheets', 'v4', http=http_auth)
+        self.service = googleapiclient.discovery.build("sheets", "v4", http=http_auth)
         self.connection_ok = True
 
         return True
 
-    def get_data(self, spreadsheets_id: str, list_name: str, list_range: str) -> List[List[str]]:
+    def get_data(
+        self, spreadsheets_id: str, list_name: str, list_range: str
+    ) -> List[List[str]]:
         """Метод получения данных из таблицы GoogleSheets.
 
         :param spreadsheets_id: id таблицы в Google Sheets
@@ -77,25 +85,31 @@ class GoogleSheets:
         if not spreadsheets_id or not list_name or not list_range:
             return []
 
-        values = self.service.spreadsheets().values().get(spreadsheetId=spreadsheets_id,
-                                                          range=f'{list_name}!{list_range}',
-                                                          majorDimension='ROWS').execute()
-        if not values['values']:
+        values = (
+            self.service.spreadsheets()
+            .values()
+            .get(
+                spreadsheetId=spreadsheets_id,
+                range=f"{list_name}!{list_range}",
+                majorDimension="ROWS",
+            )
+            .execute()
+        )
+        if not values["values"]:
             return []
 
         # googlesheets отдает диапазон, отсекая в запрашиваемом диапазоне пустые ячейки снизу, но пустые строки # pylint: disable=line-too-long
         # могут оказаться в середине текста
         # отсортируем, чтобы пустые строки оказались вверху, а потом удалим их
-        values = sorted(values['values'])
+        values = sorted(values["values"])
         i = 0
         while not values[i]:
             i += 1
         return values[i:]
 
-    def send_data(self, data: List[Any],
-                  spreadsheets_id: str,
-                  list_name: str,
-                  list_range: str) -> bool:
+    def send_data(
+        self, data: List[Any], spreadsheets_id: str, list_name: str, list_range: str
+    ) -> bool:
         """Метод записи данных в таблицу GoogleSheets.
 
         :param data: Данные для записи.
@@ -106,22 +120,21 @@ class GoogleSheets:
         """
         # В начале очищаем диапазон.
         # https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets.values/clear?hl=ru
-        self.service.spreadsheets().values().clear(spreadsheetId=spreadsheets_id,
-                                                   range=f'{list_name}!{list_range}',
-                                                   body={}).execute()
+        self.service.spreadsheets().values().clear(
+            spreadsheetId=spreadsheets_id, range=f"{list_name}!{list_range}", body={}
+        ).execute()
         # Записываем данные
         self.service.spreadsheets().values().batchUpdate(
             spreadsheetId=spreadsheets_id,
             body={
-                'valueInputOption': 'USER_ENTERED',
-                'data':
-                [
+                "valueInputOption": "USER_ENTERED",
+                "data": [
                     {
-                        'range': f'{list_name}!{list_range}',
-                        'majorDimension': 'ROWS',
-                        'values': data,
+                        "range": f"{list_name}!{list_range}",
+                        "majorDimension": "ROWS",
+                        "values": data,
                     },
                 ],
-                },
-            ).execute()
+            },
+        ).execute()
         return True

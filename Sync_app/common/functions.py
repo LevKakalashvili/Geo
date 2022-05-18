@@ -4,7 +4,7 @@ from typing import Any
 
 
 def string_title(_str: Any) -> str:
-    """Функция отрабатывает так же как string.title(), но учитывает, что после апострофа должен идти символ в нижнем регистре.""" # pylint: disable=line-too-long
+    """Функция отрабатывает так же как string.title(), но учитывает, что после апострофа должен идти символ в нижнем регистре."""
     # Т.к. str.title() не корректно обрабатывает апостроф
     if isinstance(_str, list) and len(_str) == 1:
         _str = _str[0]
@@ -15,7 +15,7 @@ def string_title(_str: Any) -> str:
         _str = _str.title()
 
     # Эффект Домино [Ba Cognac]
-    if '[Ba ' in _str:
-        _str = _str.replace('[Ba ', '[BA ')
+    if "[Ba " in _str:
+        _str = _str.replace("[Ba ", "[BA ")
 
     return _str

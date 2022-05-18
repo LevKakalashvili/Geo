@@ -13,55 +13,83 @@ class MoySkladDBGood(models.Model):
     """Класс описывает модель для работы с товарами из сервиса МойСклад."""
 
     # UUID товара
-    uuid = models.CharField(primary_key=True,
-                            max_length=36,
-                            unique=True,
-                            help_text='Уникальный идентификатор товара')
+    uuid = models.CharField(
+        primary_key=True,
+        max_length=36,
+        unique=True,
+        help_text="Уникальный идентификатор товара",
+    )
     # Родительский UUID товара
-    parent_uuid = models.CharField(max_length=36,
-                                   help_text='Уникальный идентификатор родительского товара. '
-                                             'Для модификация товаров')
+    parent_uuid = models.CharField(
+        max_length=36,
+        help_text="Уникальный идентификатор родительского товара. "
+        "Для модификация товаров",
+    )
     # Полное наименование товара.
     # Использовать нужно только для связки данных из КонтурМаркет
-    full_name = models.CharField(max_length=200, unique=True, help_text='Полное имя товара')
+    full_name = models.CharField(
+        max_length=200, unique=True, help_text="Полное имя товара"
+    )
     # Путь, папка
-    path_name = models.CharField(max_length=100, help_text='Папка товара')
+    path_name = models.CharField(max_length=100, help_text="Папка товара")
     # Стиль
-    style = models.CharField(max_length=100, help_text='Стиль пива, если товар - пиво')
+    style = models.CharField(max_length=100, help_text="Стиль пива, если товар - пиво")
     # Цена товара
-    price = models.DecimalField(max_digits=5, decimal_places=2, help_text='Цена товара')
+    price = models.DecimalField(max_digits=5, decimal_places=2, help_text="Цена товара")
     # Наименование пивоварни
-    brewery = models.CharField(max_length=100, help_text='Наименование пивоварни')
+    brewery = models.CharField(max_length=100, help_text="Наименование пивоварни")
     # Наименование пива
-    name = models.CharField(max_length=100, help_text='Наименование товара')
+    name = models.CharField(max_length=100, help_text="Наименование товара")
     # Содержание алкоголя
-    abv = models.FloatField(help_text='Содержание алкоголя')
+    abv = models.FloatField(help_text="Содержание алкоголя")
     # Плотность
-    og = models.FloatField(help_text='Начальная плотность')
+    og = models.FloatField(help_text="Начальная плотность")
     # Горечь
-    ibu = models.PositiveSmallIntegerField(help_text='Горечь')
+    ibu = models.PositiveSmallIntegerField(help_text="Горечь")
     # Признак алкогольной продукции
-    is_alco = models.BooleanField(help_text='Признак алкогольного напитка', default=False)
+    is_alco = models.BooleanField(
+        help_text="Признак алкогольного напитка", default=False
+    )
     # Признак разливного пива
-    is_draft = models.BooleanField(help_text='Признак разливного пива', default=False)
+    is_draft = models.BooleanField(help_text="Признак разливного пива", default=False)
     # Признак сидр или нет
-    is_cider = models.BooleanField(help_text='Признак сидра', default=False)
+    is_cider = models.BooleanField(help_text="Признак сидра", default=False)
     # Признак пиво или нет
-    is_beer = models.BooleanField(help_text='Признак пива', default=False)
+    is_beer = models.BooleanField(help_text="Признак пива", default=False)
     # Емкость тары
-    capacity = models.ForeignKey(Capacity,
-                                 help_text='Емкость тары',
-                                 db_column='capacity',
-                                 on_delete=models.PROTECT)
+    capacity = models.ForeignKey(
+        Capacity,
+        help_text="Емкость тары",
+        db_column="capacity",
+        on_delete=models.PROTECT,
+    )
     # Код ЕГАИС
-    egais_code = models.ManyToManyField(KonturMarketDBGood, help_text='Код алкогольной продукции')
+    egais_code = models.ManyToManyField(
+        KonturMarketDBGood, help_text="Код алкогольной продукции"
+    )
 
     class Meta:
         indexes = [
-            models.Index(fields=['uuid', ]),
-            models.Index(fields=['full_name', ]),
-            models.Index(fields=['brewery', ]),
-            models.Index(fields=['name', ]),
+            models.Index(
+                fields=[
+                    "uuid",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "full_name",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "brewery",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "name",
+                ]
+            ),
         ]
 
     @staticmethod
@@ -88,7 +116,9 @@ class MoySkladDBGood(models.Model):
                         parent_uuid=ms_good.parent_id,
                         full_name=ms_good.name,
                         # Если модификация товара
-                        path_name=ms_good.path_name if ms_good.path_name is not None else '',
+                        path_name=ms_good.path_name
+                        if ms_good.path_name is not None
+                        else "",
                         price=ms_good.price[0].value / 100,
                         brewery=parsed_name.brewery,
                         name=parsed_name.name,
@@ -116,9 +146,11 @@ class MoySkladDBStock(models.Model):
     """Класс описывает модель остатка по товару."""
 
     # Количество товара на складе. Может отсутствовать, если товар - комплект
-    quantity = models.PositiveSmallIntegerField(help_text='Остаток товара на складе')
+    quantity = models.PositiveSmallIntegerField(help_text="Остаток товара на складе")
     # UUID товара
-    uuid = models.OneToOneField(MoySkladDBGood,
-                                on_delete=models.CASCADE,
-                                primary_key=True,
-                                help_text='Уникальный идентификатор товара')
+    uuid = models.OneToOneField(
+        MoySkladDBGood,
+        on_delete=models.CASCADE,
+        primary_key=True,
+        help_text="Уникальный идентификатор товара",
+    )
