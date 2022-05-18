@@ -1,21 +1,22 @@
 """Модуль для вспомогательных функций."""
 import string
-from typing import Any
+from typing import List
 
 
-def string_title(_str: Any) -> str:
+def string_title(list_: List[str]) -> str:
     """Функция отрабатывает так же как string.title(), но учитывает, что после апострофа должен идти символ в нижнем регистре."""
     # Т.к. str.title() не корректно обрабатывает апостроф
-    if isinstance(_str, list) and len(_str) == 1:
-        _str = _str[0]
-
-    if "'" in _str:
-        _str = string.capwords(_str)
-    else:
-        _str = _str.title()
+    if isinstance(list_, list) and len(list_) == 1:
+        str_ = list_[0]
 
     # Эффект Домино [Ba Cognac]
-    if "[Ba " in _str:
-        _str = _str.replace("[Ba ", "[BA ")
+    if "[Bа Cognac] " in str_:
+        str_ = str_.replace("[Bа Cognac]", "[BA Cognac]")
+        return str_
 
-    return _str
+    if "'" in str_:
+        str_ = string.capwords(list_)
+    else:
+        str_ = str_.title()
+
+    return str_

@@ -38,7 +38,7 @@ class CompilanceRow(NamedTuple):
         else:
             name = "".join(self.commercial_name.split(" - ")[1:])
 
-        return string_title(_str=name)
+        return string_title(list_=name)
 
 
 @dataclass
