@@ -92,50 +92,52 @@ class KonturMarketDBGood(models.Model):
     @staticmethod
     def save_objects_to_db(list_km_goods: List[StockEGAIS]) -> None:
         """Метод сохранения данных о товарах в БД."""
-        if list_km_goods:
-            km_good: StockEGAIS
-            for km_good in list_km_goods:
-                producer = KonturMarketDBProducer(
-                    fsrar_id=km_good.good.brewery.fsrar_id,
-                    inn=km_good.good.brewery.inn,
-                    short_name=km_good.good.brewery.short_name,
-                    full_name=km_good.good.brewery.full_name,
-                )
+        if not list_km_goods:
+            return
 
-                # Если нет объема продукции, то считаем, что товар разливной, объемом 99 л
-                capacity = None
-                if km_good.good.capacity is None:
-                    # Проверяем есть запись в таблице емкостей
-                    try:
-                        capacity = Capacity.objects.get(capacity=99)
-                        # если такой записи все еще нет в таблице, то создаем ее
-                    except ObjectDoesNotExist:
-                        capacity = Capacity(capacity=99)
-                        capacity.save()
-                else:
-                    # Проверяем есть запись в таблице емкостей
-                    try:
-                        capacity = Capacity.objects.get(capacity=km_good.good.capacity)
-                        # если такой записи все еще нет в таблице, то создаем ее
-                    except ObjectDoesNotExist:
-                        capacity = Capacity(capacity=km_good.good.capacity)
-                        capacity.save()
+        km_good: StockEGAIS
+        for km_good in list_km_goods:
+            producer = KonturMarketDBProducer(
+                fsrar_id=km_good.good.brewery.fsrar_id,
+                inn=km_good.good.brewery.inn,
+                short_name=km_good.good.brewery.short_name,
+                full_name=km_good.good.brewery.full_name,
+            )
 
-                good = KonturMarketDBGood(
-                    egais_code=km_good.good.alco_code,
-                    full_name=km_good.good.name,
-                    fsrar_id=producer,
-                    capacity=capacity,
-                    is_draft=True if (capacity.capacity > 10) else False,
-                )
+            # Если нет объема продукции, то считаем, что товар разливной, объемом 99 л
+            capacity = None
+            if km_good.good.capacity is None:
+                # Проверяем есть запись в таблице емкостей
+                try:
+                    capacity = Capacity.objects.get(capacity=99)
+                    # если такой записи все еще нет в таблице, то создаем ее
+                except ObjectDoesNotExist:
+                    capacity = Capacity(capacity=99)
+                    capacity.save()
+            else:
+                # Проверяем есть запись в таблице емкостей
+                try:
+                    capacity = Capacity.objects.get(capacity=km_good.good.capacity)
+                    # если такой записи все еще нет в таблице, то создаем ее
+                except ObjectDoesNotExist:
+                    capacity = Capacity(capacity=km_good.good.capacity)
+                    capacity.save()
 
-                stock = KonturMarketDBStock(
-                    quantity=km_good.quantity_2, egais_code=good
-                )
+            good = KonturMarketDBGood(
+                egais_code=km_good.good.alco_code,
+                full_name=km_good.good.name,
+                fsrar_id=producer,
+                capacity=capacity,
+                is_draft=True if (capacity.capacity > 10) else False,
+            )
 
-                producer.save()
-                good.save()
-                stock.save()
+            stock = KonturMarketDBStock(
+                quantity=km_good.quantity_2, egais_code=good
+            )
+
+            producer.save()
+            good.save()
+            stock.save()
 
 
 class KonturMarketDBStock(models.Model):
