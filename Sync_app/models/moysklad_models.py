@@ -60,7 +60,6 @@ class MoySkladDBGood(models.Model):
     capacity = models.ForeignKey(
         Capacity,
         help_text="Емкость тары",
-        db_column="capacity",
         on_delete=models.PROTECT,
     )
     # Код ЕГАИС

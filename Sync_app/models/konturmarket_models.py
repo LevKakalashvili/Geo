@@ -62,7 +62,6 @@ class KonturMarketDBGood(models.Model):
     capacity = models.ForeignKey(
         Capacity,
         help_text="Емкость тары",
-        db_column="capacity",
         on_delete=models.PROTECT,
     )
 
@@ -71,7 +70,6 @@ class KonturMarketDBGood(models.Model):
     # Признак разливной продукции. Рассчитываемый параметр: если capacity > 1л, то принимаем что товар разливной -
     # объем расчетный
     is_draft = models.BooleanField(
-        db_column="is_draft",
         # По умолчанию ставим в False
         default=False,
         help_text="Признак разливного пива",
@@ -154,6 +152,5 @@ class KonturMarketDBStock(models.Model):
         KonturMarketDBGood,
         on_delete=models.CASCADE,
         primary_key=True,
-        db_column="egais_code",
         help_text="Код алкогольной продукции (код АП) в ЕГАИС",
     )
