@@ -52,7 +52,6 @@ def db_set_matches(googlesheets_copm_table: list[list[str]]) -> list[list[str]]:
 
             # Если не нашли товар в таблице МойСклад
             if len(ms_db_good) == 0:
-                # gs_row.append("Не найден в таблице товаров МС. Возможно розлив")
                 not_proceeded_good.append(gs_row)
             # Если в выборке из таблицы товаров для МойСклад нашлось товаров больше одного
             elif len(ms_db_good) >= 2:

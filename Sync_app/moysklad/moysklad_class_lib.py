@@ -94,7 +94,7 @@ class Good(BaseModel):
     """Класс описывает структуру товара в сервисе МОйСклад."""
 
     # Уникальный идентификатор товара
-    _id: str = Field(alias='id')
+    good_id: str = Field(alias='id')
     # Наименование товара. Например Lux In Tenebris - Der Grusel (Sour - Gose
     # - Fruited. OG 11.5%, ABV 4,2%)
     name: str
