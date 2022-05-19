@@ -1,8 +1,7 @@
 """Модуль вспомогательных функций для работы с БД."""
-from typing import List
 
-from Sync_app.models import MoySkladDBGood, KonturMarketDBGood
 from Sync_app.googledrive.googledrive_class_lib import CompilanceRow
+from Sync_app.models import KonturMarketDBGood, MoySkladDBGood
 
 
 def db_set_matches(googlesheets_copm_table: list[list[str]]) -> list[list[str]]:

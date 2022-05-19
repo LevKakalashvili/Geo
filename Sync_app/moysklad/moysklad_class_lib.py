@@ -2,13 +2,12 @@
 import re
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, NamedTuple, Optional, Union, Any, Tuple
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union
 
+import requests
 import Sync_app.moysklad.moysklad_urls as ms_urls
 import Sync_app.privatedata.moysklad_privatedata as ms_pvdata
-import requests
-from pydantic import BaseModel
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 
 class GoodTuple(NamedTuple):
@@ -227,7 +226,6 @@ class MoySklad:
 
         need_request: bool = True
         goods: List[Good] = []
-        converted_goods: List[Good] = []
 
         while need_request:
             # Получаем url для отправки запроса в сервис
@@ -251,10 +249,7 @@ class MoySklad:
             # Добавляем новые товары к существующим, расширяем список
             goods.extend(rows)
 
-        for good in goods:
-            converted_goods.append(Good(**good))
-
-        return converted_goods
+        return [Good(**good) for good in goods]
 
 
 _TRASH: Tuple = (
@@ -392,12 +387,17 @@ def _get_characteristics(type_: Characteristics, add_info: str = "") -> float:
     add_info = 'Lager - IPL (India Pale Lager). ABV 5.5%, IBU 15'
     вернется 0
     """
-    if not add_info or ('. ' not in add_info):
+    if not add_info or (". " not in add_info):
         return 0
 
     for _info in add_info.split(". ")[1].split(", "):
         if _info.lower().find(type_.value) != -1:
-            return float(_info.lower().replace(f"{type_.value} ", "").replace(",", ".").replace("%", ""))
+            return float(
+                _info.lower()
+                .replace(f"{type_.value} ", "")
+                .replace(",", ".")
+                .replace("%", "")
+            )
     return 0
 
 

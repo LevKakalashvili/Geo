@@ -1,9 +1,7 @@
 """Модуль содержит описание моделей для работы с сервисом Контур.Маркет."""
 from typing import List
 
-from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
-
 from Sync_app.konturmarket.konturmarket_class_lib import StockEGAIS
 from Sync_app.models.app_models import Capacity
 
@@ -113,7 +111,9 @@ class KonturMarketDBGood(models.Model):
             else:
                 # Проверяем есть запись в таблице емкостей
                 # если такой записи все еще нет в таблице, то создаем ее
-                capacity = Capacity.objects.get_or_create(capacity=km_good.good.capacity)
+                capacity = Capacity.objects.get_or_create(
+                    capacity=km_good.good.capacity
+                )
 
             good = KonturMarketDBGood(
                 egais_code=km_good.good.alco_code,
@@ -123,9 +123,7 @@ class KonturMarketDBGood(models.Model):
                 is_draft=capacity.capacity > 10,
             )
 
-            stock = KonturMarketDBStock(
-                quantity=km_good.quantity_2, egais_code=good
-            )
+            stock = KonturMarketDBStock(quantity=km_good.quantity_2, egais_code=good)
 
             producer.save()
             good.save()

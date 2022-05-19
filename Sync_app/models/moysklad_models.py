@@ -2,11 +2,9 @@
 from typing import List
 
 from django.db import models
-from django.core.exceptions import ObjectDoesNotExist
-
+from Sync_app.models.app_models import Capacity
 from Sync_app.models.konturmarket_models import KonturMarketDBGood
 from Sync_app.moysklad.moysklad_class_lib import Good as MoySkladGood
-from Sync_app.models.app_models import Capacity
 
 
 class MoySkladDBGood(models.Model):
@@ -94,51 +92,46 @@ class MoySkladDBGood(models.Model):
     @staticmethod
     def save_objects_to_db(list_ms_goods: List[MoySkladGood]) -> None:
         """Метод сохраняет объекты, созданные на основе списка list_ms_goods в БД."""
-        if list_ms_goods:
-            for ms_good in list_ms_goods:
-                # Если текущий товар - не комплект из товаров
-                # (разливное пиво заведено как отдельный товар с припиской (0,5),
-                # а 1л - комплект из двух товаров 0,5
-                if ms_good.quantity is not None:
-                    parsed_name = ms_good.parse_object()
-                    # Проверяем есть запись в таблице емкостей
-                    try:
-                        capacity = Capacity.objects.get(capacity=parsed_name.capacity)
-                    # если такой записи все еще нет в таблице, то создаем ее
-                    except ObjectDoesNotExist:
-                        capacity = Capacity(capacity=parsed_name.capacity)
-                    capacity.save()
+        for ms_good in list_ms_goods:
+            # Если текущий товар - не комплект из товаров
+            # (разливное пиво заведено как отдельный товар с припиской (0,5),
+            # а 1л - комплект из двух товаров 0,5
+            if ms_good.quantity is None:
+                continue
 
-                    # Заполняем товар
-                    good = MoySkladDBGood(
-                        uuid=ms_good.good_id,
-                        parent_uuid=ms_good.parent_id,
-                        full_name=ms_good.name,
-                        # Если модификация товара
-                        path_name=ms_good.path_name
-                        if ms_good.path_name is not None
-                        else "",
-                        price=ms_good.price[0].value / 100,
-                        brewery=parsed_name.brewery,
-                        name=parsed_name.name,
-                        og=parsed_name.og,
-                        abv=parsed_name.abv,
-                        ibu=parsed_name.ibu,
-                        is_alco=parsed_name.is_alco,
-                        is_draft=parsed_name.is_draft,
-                        is_cider=parsed_name.is_cider,
-                        style=parsed_name.style,
-                        capacity=capacity,
-                        is_beer=parsed_name.is_beer,
-                    )
-                    good.save()
-                    # Заполняем остатки
-                    stocks = MoySkladDBStock(
-                        uuid=good,
-                        # Если по какой-то причине остаток товара в МойСклад отрицательный в БД сохраняем 0
-                        quantity=ms_good.quantity if ms_good.quantity >= 0 else 0,
-                    )
-                    stocks.save()
+            parsed_name = ms_good.parse_object()
+            # Проверяем есть запись в таблице емкостей
+            # если такой записи все еще нет в таблице, то создаем ее
+            capacity = Capacity.objects.get_or_create(capacity=parsed_name.capacity)
+
+            # Заполняем товар
+            good = MoySkladDBGood(
+                uuid=ms_good.good_id,
+                parent_uuid=ms_good.parent_id,
+                full_name=ms_good.name,
+                # Если модификация товара
+                path_name=ms_good.path_name or "",
+                price=ms_good.price[0].value / 100,
+                brewery=parsed_name.brewery,
+                name=parsed_name.name,
+                og=parsed_name.og,
+                abv=parsed_name.abv,
+                ibu=parsed_name.ibu,
+                is_alco=parsed_name.is_alco,
+                is_draft=parsed_name.is_draft,
+                is_cider=parsed_name.is_cider,
+                style=parsed_name.style,
+                capacity=capacity,
+                is_beer=parsed_name.is_beer,
+            )
+            good.save()
+            # Заполняем остатки
+            stocks = MoySkladDBStock(
+                uuid=good,
+                # Если по какой-то причине остаток товара в МойСклад отрицательный в БД сохраняем 0
+                quantity=ms_good.quantity if ms_good.quantity >= 0 else 0,
+            )
+            stocks.save()
 
 
 class MoySkladDBStock(models.Model):
