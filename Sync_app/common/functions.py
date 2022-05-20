@@ -5,9 +5,11 @@ from typing import List
 
 def string_title(list_: List[str]) -> str:
     """Функция отрабатывает так же как string.title(), но учитывает, что после апострофа должен идти символ в нижнем регистре."""
+
+    str_: str = ''
     # Т.к. str.title() не корректно обрабатывает апостроф
     if isinstance(list_, list) and len(list_) == 1:
-        str_ = list_[0]
+        str_ = ''.join(list_)
 
     # Эффект Домино [Ba Cognac]
     if "[Bа Cognac] " in str_:
@@ -15,7 +17,7 @@ def string_title(list_: List[str]) -> str:
         return str_
 
     if "'" in str_:
-        str_ = string.capwords(list_)
+        str_ = string.capwords(str_)
     else:
         str_ = str_.title()
 
