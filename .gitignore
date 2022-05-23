@@ -2,7 +2,6 @@
 /Lib/
 /Scripts/
 pyvenv.cfg
-/Sync_app/privatedata/
 
 # User-specific stuff
 .idea/**/workspace.xml
@@ -50,3 +49,4 @@ pyvenv.cfg
  !**/migrations
  !**/migrations/__init__.py
 /Sync_app/privatedata/
+/venv/
