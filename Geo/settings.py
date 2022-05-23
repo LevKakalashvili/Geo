@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
+import Sync_app.privatedata.mysql_privatedata
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -20,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-1e^#wzw9hba(67(&$4zkx56xp*f_el&w1oif#+9z3zj0)*1c#3'
+SECRET_KEY = Sync_app.privatedata.django_privatedata.SECRET_KEY
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -80,13 +82,10 @@ DATABASES = {
     'default': {
             'ENGINE': 'django.db.backends.mysql',
             'NAME': 'geo',
-            # Настройки соединения логин, пароль берем из файла my.ini
-            # https://github.com/LevKakalashvili/gb_databases_intoduction/blob/main/Task_1/Task_1_1.docx
-            'OPTIONS': {
-                'read_default_file': 'C:\\ProgramData\\MySQL\\MySQL Server 8.0\\my.ini',
-                },
+            'USER': Sync_app.privatedata.mysql_privatedata.user,
+            'PASSWORD': Sync_app.privatedata.mysql_privatedata.password,
+            },
         }
-}
 
 
 # Password validation
