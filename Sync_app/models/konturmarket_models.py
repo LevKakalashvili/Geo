@@ -9,11 +9,9 @@ from Sync_app.models.app_models import Capacity
 class KonturMarketDBProducer(models.Model):
     """Класс описывает модель производителя, продукции в соответствии с терминами ЕГАИС."""
 
-    fsrar_id = models.CharField(
+    fsrar = models.CharField(
         primary_key=True,
         max_length=12,
-        unique=True,
-        db_column="fsrar_id",
         help_text="Уникальный ЕГАИС идентификатор производителя",
     )
 
@@ -36,8 +34,6 @@ class KonturMarketDBGood(models.Model):
     egais_code = models.CharField(
         primary_key=True,
         max_length=19,
-        unique=True,
-        db_column="egais_code",
         help_text="Код алкогольной продукции (код АП) в ЕГАИС",
     )
 
@@ -51,8 +47,10 @@ class KonturMarketDBGood(models.Model):
     )
 
     # Внешний ключ на модель, таблицу производителя
-    fsrar_id = models.ForeignKey(
-        KonturMarketDBProducer, on_delete=models.CASCADE, db_column="fsrar_id"
+    fsrar = models.ForeignKey(
+        KonturMarketDBProducer,
+        on_delete=models.CASCADE,
+        help_text="Уникальный ЕГАИС идентификатор производителя",
     )
 
     # Объем продукции. Если не указан, то считаем, что позиция разливная и нужно выставить флаг,
@@ -77,11 +75,6 @@ class KonturMarketDBGood(models.Model):
         indexes = [
             models.Index(
                 fields=[
-                    "egais_code",
-                ]
-            ),
-            models.Index(
-                fields=[
                     "full_name",
                 ]
             ),
@@ -96,7 +89,7 @@ class KonturMarketDBGood(models.Model):
         km_good: StockEGAIS
         for km_good in list_km_goods:
             producer = KonturMarketDBProducer(
-                fsrar_id=km_good.good.brewery.fsrar_id,
+                fsrar=km_good.good.brewery.fsrar_id,
                 inn=km_good.good.brewery.inn,
                 short_name=km_good.good.brewery.short_name,
                 full_name=km_good.good.brewery.full_name,
@@ -118,7 +111,7 @@ class KonturMarketDBGood(models.Model):
             good = KonturMarketDBGood(
                 egais_code=km_good.good.alco_code,
                 full_name=km_good.good.name,
-                fsrar_id=producer,
+                fsrar=producer,
                 capacity=capacity,
                 is_draft=capacity.capacity > 10,
             )
