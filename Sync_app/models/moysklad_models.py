@@ -69,11 +69,6 @@ class MoySkladDBGood(models.Model):
         indexes = [
             models.Index(
                 fields=[
-                    "uuid",
-                ]
-            ),
-            models.Index(
-                fields=[
                     "full_name",
                 ]
             ),
