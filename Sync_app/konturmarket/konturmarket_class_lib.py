@@ -88,12 +88,9 @@ class KonturMarket:
             # Получаем словарь с информацией о товаре
             goods_list.append(StockEGAIS(**good))
 
-            # Сортировка по названию пивоварни
-            goods_list = sorted(
-                goods_list, key=lambda element: element.good.brewery.short_name
-            )
-            return goods_list
-        return []
+        # Сортировка по названию пивоварни
+        goods_list = sorted(goods_list, key=lambda element: element.good.brewery.short_name)
+        return goods_list
 
     def login(self) -> bool:
         """Метод для логина в сервисе Контур.Маркет."""
