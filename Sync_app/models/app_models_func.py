@@ -46,13 +46,10 @@ def db_set_matches(googlesheets_copm_table: list[list[str]]) -> list[list[str]]:
             if len(ms_db_good) == 0:
                 not_proceeded_good.append(gs_row)
 
-            # Т.к. таблица capacity имеет только один столбец. И первичный ключ - емкость тары,
-            # то нет необходимости делать в запросе .select_related('capacity'), достаточно посмотреть
-            # значение 'capacity_id'
             # Если в выборке из таблицы товаров для МойСклад нашлось товаров больше одного
             elif len(ms_db_good) >= 2:
                 # Фильтруем по объему
-                ms_db_good = [good for good in ms_db_good if good.capacity_id == km_db_good.capacity_id]
+                ms_db_good = [good for good in ms_db_good if good.capacity == km_db_good.capacity]
                 # ms_db_good = list(
                 #     filter(
                 #         lambda element: element.capacity.capacity

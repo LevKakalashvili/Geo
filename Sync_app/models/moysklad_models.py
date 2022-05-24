@@ -54,11 +54,7 @@ class MoySkladDBGood(models.Model):
     # Признак пиво или нет
     is_beer = models.BooleanField(help_text="Признак пива", default=False)
     # Емкость тары
-    capacity = models.ForeignKey(
-        Capacity,
-        help_text="Емкость тары",
-        on_delete=models.PROTECT,
-    )
+    capacity = models.DecimalField(max_digits=5, decimal_places=3, help_text="Емкость тары")
     # Код ЕГАИС
     egais_code = models.ManyToManyField(
         KonturMarketDBGood, help_text="Код алкогольной продукции"
@@ -94,9 +90,6 @@ class MoySkladDBGood(models.Model):
                 continue
 
             parsed_name = ms_good.parse_object()
-            # Проверяем есть запись в таблице емкостей
-            # если такой записи все еще нет в таблице, то создаем ее
-            capacity = Capacity.objects.get_or_create(capacity=parsed_name.capacity)[0]
 
             # Заполняем товар
             good = MoySkladDBGood(
@@ -115,7 +108,7 @@ class MoySkladDBGood(models.Model):
                 is_draft=parsed_name.is_draft,
                 is_cider=parsed_name.is_cider,
                 style=parsed_name.style,
-                capacity=capacity,
+                capacity=parsed_name.capacity,
                 is_beer=parsed_name.is_beer,
             )
             good.save()

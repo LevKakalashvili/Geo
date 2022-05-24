@@ -54,11 +54,7 @@ class KonturMarketDBGood(models.Model):
 
     # Объем продукции. Если не указан, то считаем, что позиция разливная и нужно выставить флаг,
     # что объем расчетный
-    capacity = models.ForeignKey(
-        Capacity,
-        help_text="Емкость тары",
-        on_delete=models.PROTECT,
-    )
+    capacity = models.DecimalField(max_digits=5, decimal_places=3, help_text="Емкость тары")
 
     # Объем продукции. Если не указан, то считаем, что позиция разливная и нужно выставить флаг,
     # что объем расчетный
@@ -94,25 +90,13 @@ class KonturMarketDBGood(models.Model):
                 full_name=km_good.good.brewery.full_name,
             )
 
-            # Если нет объема продукции, то считаем, что товар разливной, объемом 99 л
-            capacity = None
-            if km_good.good.capacity is None:
-                # Проверяем есть запись в таблице емкостей
-                # если такой записи все еще нет в таблице, то создаем ее
-                capacity = Capacity.objects.get_or_create(capacity=99)[0]
-            else:
-                # Проверяем есть запись в таблице емкостей
-                # если такой записи все еще нет в таблице, то создаем ее
-                capacity = Capacity.objects.get_or_create(
-                    capacity=km_good.good.capacity
-                )[0]
-
             good = KonturMarketDBGood(
                 egais_code=km_good.good.alco_code,
                 full_name=km_good.good.name,
                 fsrar=producer,
-                capacity=capacity,
-                is_draft=capacity.capacity > 10,
+                # Если нет объема продукции, то считаем, что товар разливной, объемом 99 л
+                capacity=km_good.good.capacity if km_good.good.capacity else 99,
+                is_draft=km_good.good.capacity > 10,
             )
 
             stock = KonturMarketDBStock(quantity=km_good.quantity_2, egais_code=good)
