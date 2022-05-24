@@ -31,12 +31,13 @@ class CompilanceRow(NamedTuple):
     @property
     def name(self) -> str:
         """Название продукта."""
-        _len = len(self.commercial_name.split(" - "))
+        separator = ' - '
+        count = self.commercial_name.count(separator)
         name: str
-        if _len == 1:
+        if count == 0:
             name = self.commercial_name
         else:
-            name = "".join(self.commercial_name.split(" - ")[1:])
+            name = "".join(self.commercial_name.split(separator)[1:])
 
         return string_title(list_=name)
 
