@@ -1,21 +1,13 @@
 """В модуле описаны классы для работы с сервисом Контур.Маркет https://market.kontur.ru/."""
 import json
 from dataclasses import dataclass
-from typing import List
-from typing import Optional
-from typing import Tuple
+from typing import List, Optional, Tuple
 
 import requests
-from pydantic import BaseModel
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 import Sync_app.privatedata.kontrurmarket_privatedata as km_pvdata
-from Sync_app.konturmarket.konturmarket_urls import KonturMarketUrl
-from Sync_app.konturmarket.konturmarket_urls import UrlType
-from Sync_app.konturmarket.konturmarket_urls import get_url
-
-
-session = requests.Session()
+from Sync_app.konturmarket.konturmarket_urls import KonturMarketUrl, UrlType, get_url
 
 
 class Brewery(BaseModel):
@@ -75,15 +67,17 @@ class StockEGAIS(BaseModel):
 class KonturMarket:
     """Класс описывает работу с сервисом Контур.Маркет https://market.kontur.ru/."""
 
-    # Переменная устанавливается в True, в случае успешного логина в сервисе
-    connection_ok: bool = False
+    def __init__(self):
+        # Переменная устанавливается в True, в случае успешного логина в сервисе
+        self.connection_ok: bool = False
 
-    @staticmethod
-    def get_egais_assortment() -> List[GoodEGAIS]:
+        self._session = requests.Session()
+
+    def get_egais_assortment(self) -> List[StockEGAIS]:
         """Метод возвращает список инстансов GoodEGAIS, полученных из сервиса."""
-        goods_list: List[GoodEGAIS] = []
+        goods_list: List[StockEGAIS] = []
         url: KonturMarketUrl = get_url(UrlType.EGAIS_ASSORTMENT)
-        response = session.get(url.url)
+        response = self._session.get(url.url)
 
         if not response.ok:
             return []
@@ -110,7 +104,7 @@ class KonturMarket:
         }
         # Пытаемся залогиниться на сайте
         url: KonturMarketUrl = get_url(UrlType.LOGIN)
-        response = session.post(
+        response = self._session.post(
             url=url.url,
             data=json.dumps(auth_data),
             headers=url.headers,
