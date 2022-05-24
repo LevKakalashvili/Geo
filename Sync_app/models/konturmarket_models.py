@@ -3,7 +3,6 @@ from typing import List
 
 from django.db import models
 from Sync_app.konturmarket.konturmarket_class_lib import StockEGAIS
-from Sync_app.models.app_models import Capacity
 
 
 class KonturMarketDBProducer(models.Model):

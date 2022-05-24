@@ -2,7 +2,6 @@
 from typing import List
 
 from django.db import models
-from Sync_app.models.app_models import Capacity
 from Sync_app.models.konturmarket_models import KonturMarketDBGood
 from Sync_app.moysklad.moysklad_class_lib import Good as MoySkladGood
 
