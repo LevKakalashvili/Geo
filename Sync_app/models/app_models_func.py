@@ -35,19 +35,11 @@ def db_set_matches(googlesheets_copm_table: list[list[str]]) -> list[list[str]]:
             # 2. Barbe Ruby
             # 2.1 Barista Chocolate Quad
 
-            # Проверяем на наличие в строке ' - '
             # Вариант 2:
-            if gs_good.brewery == "":
-                ms_db_good = MoySkladDBGood.objects.filter(name=gs_good.name).filter(
-                    is_draft=False
-                )
-            # Вариант 1:
-            else:
-                ms_db_good = (
-                    MoySkladDBGood.objects.filter(brewery=gs_good.brewery)
-                    .filter(name=gs_good.name)
-                    .filter(is_draft=False)
-                )
+            ms_db_good = MoySkladDBGood.objects.filter(name=gs_good.name).filter(is_draft=False)
+            if gs_good.brewery:
+                # Вариант 1:
+                ms_db_good = ms_db_good.filter(brewery=gs_good.brewery)
 
             # Если не нашли товар в таблице МойСклад
             if len(ms_db_good) == 0:
