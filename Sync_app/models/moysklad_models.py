@@ -97,7 +97,7 @@ class MoySkladDBGood(models.Model):
             parsed_name = ms_good.parse_object()
             # Проверяем есть запись в таблице емкостей
             # если такой записи все еще нет в таблице, то создаем ее
-            capacity = Capacity.objects.get_or_create(capacity=parsed_name.capacity)
+            capacity = Capacity.objects.get_or_create(capacity=parsed_name.capacity)[0]
 
             # Заполняем товар
             good = MoySkladDBGood(
