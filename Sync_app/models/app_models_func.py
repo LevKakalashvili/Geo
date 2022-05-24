@@ -17,7 +17,8 @@ def db_set_matches(googlesheets_copm_table: list[list[str]]) -> list[list[str]]:
         return []
 
     not_proceeded_good = []
-    ms_db_good: QuerySet
+    # TODO: разобраться с QuerySet
+    # ms_db_good: QuerySet
     km_db_good: KonturMarketDBGood
 
     for gs_row in googlesheets_copm_table:
@@ -44,16 +45,21 @@ def db_set_matches(googlesheets_copm_table: list[list[str]]) -> list[list[str]]:
             # Если не нашли товар в таблице МойСклад
             if len(ms_db_good) == 0:
                 not_proceeded_good.append(gs_row)
+
+            # Т.к. таблица capacity имеет только один столбец. И первичный ключ - емкость тары,
+            # то нет необходимости делать в запросе .select_related('capacity'), достаточно посмотреть
+            # значение 'capacity_id'
             # Если в выборке из таблицы товаров для МойСклад нашлось товаров больше одного
             elif len(ms_db_good) >= 2:
                 # Фильтруем по объему
-                ms_db_good = list(
-                    filter(
-                        lambda element: element.capacity.capacity
-                        == km_db_good.capacity.capacity,
-                        ms_db_good,
-                    )
-                )
+                ms_db_good = [good for good in ms_db_good if good.capacity_id == km_db_good.capacity_id]
+                # ms_db_good = list(
+                #     filter(
+                #         lambda element: element.capacity.capacity
+                #         == km_db_good.capacity.capacity,
+                #         ms_db_good,
+                #     )
+                # )
 
                 # Если опять нашлось более одного товара, исключаем запись из обработки
                 if len(ms_db_good):
