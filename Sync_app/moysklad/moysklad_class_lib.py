@@ -148,9 +148,7 @@ class Good(BaseModel):
 
     def _parse_object(self) -> GoodTuple:
         if self.name:
-            full_name = self._remove_modification_from_name(
-                name=self.name, modification=self.modifications
-            )
+            full_name = self._remove_modification_from_name(name=self.name, modification=self.modifications)
             full_name = self._remove_trash_from_string(full_name)
 
             additional_info = self._get_additional_info(f_name=full_name)
@@ -159,27 +157,15 @@ class Good(BaseModel):
             style = self._get_style(additional_info)
             is_cider = bev_type.cider
             is_beer = bev_type.beer
-            abv = self._get_characteristics(
-                type_=Characteristics.ABV, add_info=additional_info
-            )
+            abv = self._get_characteristics(type_=Characteristics.ABV, add_info=additional_info)
             is_alco = True if abv > 1 else False
-            og = self._get_characteristics(
-                type_=Characteristics.OG, add_info=additional_info
-            )
-            ibu = self._get_characteristics(
-                type_=Characteristics.IBU, add_info=additional_info
-            )
-            brewery = self._get_brewery(
-                f_name=full_name, add_info=additional_info, parent_path=self.path_name
-            )
-            name = self._get_name(
-                f_name=full_name, add_info=additional_info, brewery=brewery
-            )
+            og = self._get_characteristics(type_=Characteristics.OG, add_info=additional_info)
+            ibu = self._get_characteristics(type_=Characteristics.IBU, add_info=additional_info)
+            brewery = self._get_brewery(f_name=full_name, add_info=additional_info, parent_path=self.path_name)
+            name = self._get_name(f_name=full_name, add_info=additional_info, brewery=brewery)
 
             is_draft = self._is_draft(attr=self.attributes)
-            capacity = self._get_capacity(
-                cap=dict(self).get("volume"), modification=self.modifications
-            )
+            capacity = self._get_capacity(cap=dict(self).get("volume"), modification=self.modifications)
 
             return GoodTuple(
                 brewery=brewery,
@@ -252,7 +238,8 @@ class Good(BaseModel):
         """Метод возвращает строку информации, содержащей стиль, плотность, содержание алкоголя.
 
         Например:
-        'Coven - GLAM (Lager - IPL (India Pale Lager). ABV 5.5%, IBU 15)' вернется 'Lager - IPL (India Pale Lager). ABV 5.5%,IBU 15',
+        'Coven - GLAM (Lager - IPL (India Pale Lager). ABV 5.5%, IBU 15)' вернется 'Lager - IPL (India Pale Lager).
+        ABV 5.5%,IBU 15',
         'Molson Coors (UK) - Carling Original (Lager - Pale. ABV 3,7%)' вернется 'Lager - Pale. ABV 3,7%',
         'Barista Chocolate Quad (Belgian Quadrupel. ABV 11%)' вернется 'Belgian Quadrupel. ABV 11%',
         """
@@ -281,7 +268,8 @@ class Good(BaseModel):
 
     @staticmethod
     def _get_characteristics(type_: Characteristics, add_info: str = "") -> float:
-        """Метод возвращает число - количественный параметр, выбранный из параметра add_info в зависимости от переданного параметра type_.
+        """Метод возвращает число - количественный параметр, выбранный из параметра add_info в зависимости от
+        переданного параметра type_.
 
         Например:
         type_ = ABV
@@ -299,12 +287,7 @@ class Good(BaseModel):
 
         for _info in add_info.split(". ")[1].split(", "):
             if _info.lower().find(type_.value) != -1:
-                return float(
-                    _info.lower()
-                    .replace(f"{type_.value} ", "")
-                    .replace(",", ".")
-                    .replace("%", "")
-                )
+                return float(_info.lower().replace(f"{type_.value} ", "").replace(",", ".").replace("%", ""))
         return 0
 
     @staticmethod
@@ -360,14 +343,17 @@ class Good(BaseModel):
 
 @dataclass()
 class MoySklad:
-    """Класс описывает работу с сервисом МойСклад по JSON API 1.2 https://dev.moysklad.ru/doc/api/remap/1.2/#mojsklad-json-api."""
+    """Класс описывает работу с сервисом МойСклад по
+    JSON API 1.2 https://dev.moysklad.ru/doc/api/remap/1.2/#mojsklad-json-api."""
 
     # токен для работы с сервисом
     # https://dev.moysklad.ru/doc/api/remap/1.2/#mojsklad-json-api-obschie-swedeniq-autentifikaciq
     _token: str = ""
 
     def set_token(self, request_new: bool = True) -> bool:
-        """Получение токена для доступа и работы с МС по JSON API 1.2. При успешном ответе возвращаем True, в случае ошибок False. https://dev.moysklad.ru/doc/api/remap/1.2/#mojsklad-json-api-obschie-swedeniq-autentifikaciq.
+        """Получение токена для доступа и работы с МС по JSON API 1.2. При успешном ответе возвращаем True,
+        в случае ошибок False.
+        https://dev.moysklad.ru/doc/api/remap/1.2/#mojsklad-json-api-obschie-swedeniq-autentifikaciq.
 
         :param request_new: True, каждый раз будет запрашиваться новый токен,
             если False будет браться из moysklad_privatedata.py
@@ -407,9 +393,7 @@ class MoySklad:
 
         while need_request:
             # Получаем url для отправки запроса в сервис
-            url: ms_urls.MoySkladUrl = ms_urls.get_url(
-                ms_urls.UrlType.ASSORTMENT, offset=counter * 1000
-            )
+            url: ms_urls.MoySkladUrl = ms_urls.get_url(ms_urls.UrlType.ASSORTMENT, offset=counter * 1000)
 
             response = requests.get(url.url, url.request_filter, headers=header)
             if not response.ok:
@@ -428,4 +412,3 @@ class MoySklad:
             goods.extend(rows)
 
         return [Good(**good) for good in goods]
-
