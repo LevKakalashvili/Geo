@@ -2,8 +2,8 @@
 import re
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union
-
+from typing import Any, Dict, List, NamedTuple, Optional, Union
+from Sync_app.moysklad.moysklad_constants import _TRASH, _MODIFICATION_SET
 import requests
 import Sync_app.moysklad.moysklad_urls as ms_urls
 import Sync_app.privatedata.moysklad_privatedata as ms_pvdata
@@ -11,9 +11,9 @@ from pydantic import BaseModel, Field
 
 
 class GoodTuple(NamedTuple):
-    """Класс используется только для разложения полного ноименоавния товара на состоавные части.
+    """Класс используется только для разложения полного наименования товара на составные части.
 
-    Например: Наименование 'Lux In Tenebris - Der Grusel (Sour - Gose - Fruited. OG 11.5%, ABV 4,2%)' вернется котрежем
+    Например: Наименование 'Lux In Tenebris - Der Grusel (Sour - Gose - Fruited. OG 11.5%, ABV 4,2%)' вернется кортежем
     (
         brewery = 'Lux In Tenebris',
         name = 'Der Grusel',
@@ -50,6 +50,23 @@ class GoodsType(Enum):
     snack = 3
 
 
+class Characteristics(Enum):
+    """Перечисление используемое для получения характеристик продукта при парсинге строки продукта."""
+
+    ABV = "abv"
+    OG = "og"
+    IBU = "ibu"
+
+
+class BeverageType(NamedTuple):
+    """Класс описывает ти продукта."""
+
+    beer: bool
+    cider: bool
+    kombucha: bool
+    other: bool
+
+
 class Attributes(BaseModel):
     """Класс описывает поле аттрибутов. В аттрибутах хранятся: признак розлива и признак алкогольной продукции."""
 
@@ -71,14 +88,14 @@ class Modification(BaseModel):
 
 
 class MetaParentGood(BaseModel):
-    """Класс описывает метаданные родительского объекта, для случая когда используеться модификация товара."""
+    """Класс описывает метаданные родительского объекта, для случая когда используется модификация товара."""
 
     # Ссылка на родительский товар
     uuidhref: str = Field(alias="uuidHref")
 
 
 class ParentGood(BaseModel):
-    """Класс описывает структуру родительского товара. Это применимо для модификаций товора."""
+    """Класс описывает структуру родительского товара. Это применимо для модификаций товара."""
 
     # Метаданные родительского товара
     meta: MetaParentGood
@@ -131,36 +148,36 @@ class Good(BaseModel):
 
     def _parse_object(self) -> GoodTuple:
         if self.name:
-            full_name = _remove_modification_from_name(
+            full_name = self._remove_modification_from_name(
                 name=self.name, modification=self.modifications
             )
-            full_name = _remove_trash_from_string(full_name)
+            full_name = self._remove_trash_from_string(full_name)
 
-            additional_info = _get_additional_info(f_name=full_name)
-            bev_type = _get_good_type(additional_info)
+            additional_info = self._get_additional_info(f_name=full_name)
+            bev_type = self._get_good_type(additional_info)
 
-            style = _get_style(additional_info)
+            style = self._get_style(additional_info)
             is_cider = bev_type.cider
             is_beer = bev_type.beer
-            abv = _get_characteristics(
+            abv = self._get_characteristics(
                 type_=Characteristics.ABV, add_info=additional_info
             )
             is_alco = True if abv > 1 else False
-            og = _get_characteristics(
+            og = self._get_characteristics(
                 type_=Characteristics.OG, add_info=additional_info
             )
-            ibu = _get_characteristics(
+            ibu = self._get_characteristics(
                 type_=Characteristics.IBU, add_info=additional_info
             )
-            brewery = _get_brewery(
+            brewery = self._get_brewery(
                 f_name=full_name, add_info=additional_info, parent_path=self.path_name
             )
-            name = _get_name(
+            name = self._get_name(
                 f_name=full_name, add_info=additional_info, brewery=brewery
             )
 
-            is_draft = _is_draft(attr=self.attributes)
-            capacity = _get_capacity(
+            is_draft = self._is_draft(attr=self.attributes)
+            capacity = self._get_capacity(
                 cap=dict(self).get("volume"), modification=self.modifications
             )
 
@@ -178,6 +195,167 @@ class Good(BaseModel):
                 capacity=capacity,
             )
         return GoodTuple()
+
+    @staticmethod
+    def _is_draft(attr: Dict = None) -> bool:
+        # Если в сервисе у товара определен аттрибут "Розлив", то индекс аттрибута "Алкогольная продукция",
+        # в массиве аттрибутов будет 1, если не определен, то индекс будет 0. это происходит т.к. аттрибут
+        # "Алкогольная продукция", является обязательным для всех товаров
+        #
+        # Признак алкогольной продукции
+        # дополнительное поле "Алкогольная продукция" в массиве ['attributes'] - элемент с индексом 1
+        # True - чек-бокс установлен, False - не установлен
+        # проверяем, что аттрибут "Алкогольная продукция" == True
+        # Если есть аттрибут алкогольной продукции
+        is_draft: bool = False
+
+        # Если у товара определен аттрибут розлива
+        if attr is not None:
+            if len(attr) == 2:
+                is_draft = True if attr[0].value.lower() == "да" else False
+        return is_draft
+
+    @staticmethod
+    def _remove_trash_from_string(in_str: str) -> str:
+        """Метод вырезает из входной строки мусор, определённый в кортеже _TRASH()."""
+        for trash_element in _TRASH:
+            in_str = in_str.replace(trash_element, "")
+        return in_str
+
+    @staticmethod
+    def _remove_modification_from_name(name: str = "", modification=None) -> str:
+        """Метод удаляет из входной строки название модификации "Тара", определенных в _MODIFICATION_SET()."""
+        if modification:
+            for mod in modification:
+                if mod.name == "Тара":
+                    return name.replace(f" ({mod.value})", "")
+        return name
+
+    @staticmethod
+    def _get_capacity(cap: float = None, modification: Dict = None) -> float:
+        """Метод возвращает объем продукции."""
+        # Модификации в сервисе не имеют аттрибут объем, но название модификации будет иметь вид
+        # Alaska - Нигилист (Lager - IPL (India Pale Lager). OG 16%, ABV 6,8%, IBU 60) (Название модификации)
+        # Все модификации сделаны для разделения по объемам
+        capacity: float = 0.0
+        if cap is not None:
+            return cap
+
+        if modification[0].name == "Тара":
+            for _capacity in _MODIFICATION_SET:
+                if _capacity == modification[0].value:
+                    capacity = float(_MODIFICATION_SET[_capacity])
+        return capacity
+
+    @staticmethod
+    def _get_additional_info(f_name: str = "") -> str:
+        """Метод возвращает строку информации, содержащей стиль, плотность, содержание алкоголя.
+
+        Например:
+        'Coven - GLAM (Lager - IPL (India Pale Lager). ABV 5.5%, IBU 15)' вернется 'Lager - IPL (India Pale Lager). ABV 5.5%,IBU 15',
+        'Molson Coors (UK) - Carling Original (Lager - Pale. ABV 3,7%)' вернется 'Lager - Pale. ABV 3,7%',
+        'Barista Chocolate Quad (Belgian Quadrupel. ABV 11%)' вернется 'Belgian Quadrupel. ABV 11%',
+        """
+        add_info: str
+
+        if f_name != "":
+            regex = r"\(([^()]*(?:\([^()]*\)[^()]*)*)\)$"
+            matches = re.findall(regex, f_name)
+            if len(matches) != 0:
+                add_info = matches[0]
+                return add_info
+        return ""
+
+    @staticmethod
+    def _get_style(add_info: str = "") -> str:
+        """Метод возвращает строку информации, содержащей стиль.
+
+        Например:
+        'Lager - IPL (India Pale Lager). ABV 5.5%, IBU 15' вернется 'Lager - IPL (India Pale Lager)',
+        'Lager - Pale. ABV 3,7%' вернется 'Lager - Pale',
+        'Belgian Quadrupel. ABV 11%' вернется 'Belgian Quadrupel',
+        """
+        if add_info != "":
+            return add_info.split(". ")[0]
+        return ""
+
+    @staticmethod
+    def _get_characteristics(type_: Characteristics, add_info: str = "") -> float:
+        """Метод возвращает число - количественный параметр, выбранный из параметра add_info в зависимости от переданного параметра type_.
+
+        Например:
+        type_ = ABV
+        add_info = 'Lager - IPL (India Pale Lager). ABV 5.5%, IBU 15'
+        вернется 5.5
+        type_ = IBU
+        add_info = 'Lager - IPL (India Pale Lager). ABV 5.5%, IBU 15'
+        вернется 15
+        type_ = OG
+        add_info = 'Lager - IPL (India Pale Lager). ABV 5.5%, IBU 15'
+        вернется 0
+        """
+        if not add_info or (". " not in add_info):
+            return 0
+
+        for _info in add_info.split(". ")[1].split(", "):
+            if _info.lower().find(type_.value) != -1:
+                return float(
+                    _info.lower()
+                    .replace(f"{type_.value} ", "")
+                    .replace(",", ".")
+                    .replace("%", "")
+                )
+        return 0
+
+    @staticmethod
+    def _get_brewery(f_name: str = "", add_info: str = "", parent_path: str = "") -> str:
+        """Метод возвращает название пивоварни, вырезанной из строки f_name.
+
+        'Кер Сари Пшеничное (Wheat Beer - Other. ABV 4,5%)' вернет '',
+        'Butch & Dutch - IPA 100 IBU (IPA - International. ABV 7%, IBU 100)' вернет 'Butch & Dutch',
+        'Trappistes Rochefort 6 (Belgian Dubbel. ABV 7,5%, IBU 22)' вернет '',
+        'Fournier - Frères Producteurs - Eleveurs - Cidre Rose (Cider - Rose. ABV 3%)' вернет parent_path,
+        'Shepherd Neame - Classic Collection - India Pale Ale (IPA - English. OG 14,6%, ABV 6,1%)' вернет parent_path
+        """
+        brewery: str = ""
+        if add_info != "" and f_name != "":
+            f_name = f_name.replace(f" ({add_info})", "")
+            if f_name.count(" - ") == 1:
+                brewery = "".join(f_name.split(" - ")[:-1])
+            elif parent_path is not None:
+                brewery = parent_path.split("/")[-1]
+        return brewery
+
+    @staticmethod
+    def _get_name(f_name: str = "", add_info: str = "", brewery: str = "") -> str:
+        """Метод возвращает название продукта, вырезанной из строки f_name.
+
+        'Кер Сари Пшеничное (Wheat Beer - Other. ABV 4,5%)' вернет 'Кер Сари Пшеничное',
+        'Butch & Dutch - IPA 100 IBU (IPA - International. ABV 7%, IBU 100)' вернет 'IPA 100 IBU',
+        'Trappistes Rochefort 6 (Belgian Dubbel. ABV 7,5%, IBU 22)' вернет 'Trappistes Rochefort 6',
+        'Fournier - Frères Producteurs - Eleveurs - Cidre Rose (Cider - Rose. ABV 3%)' вернет '',
+        'Shepherd Neame - Classic Collection - India Pale Ale (IPA - English. OG 14,6%, ABV 6,1%)' вернет ''
+        """
+        name = ""
+        if add_info != "" and f_name != "":
+            name = f_name.replace(f" ({add_info})", "")
+            if brewery:
+                name = name.replace(f"{brewery} - ", "")
+        return name
+
+    @staticmethod
+    def _get_good_type(add_info: str = "") -> BeverageType:
+        """Метод возвращает тип продукта пиво, сидр, комбуча, вырезанной из строки add_info."""
+        if add_info != "":
+            if add_info.lower().find("cider") != -1:
+                bev_type = BeverageType(beer=False, cider=True, kombucha=False, other=False)
+            elif add_info.lower().find("kombucha") != -1:
+                bev_type = BeverageType(beer=False, cider=False, kombucha=True, other=False)
+            else:
+                bev_type = BeverageType(beer=True, cider=False, kombucha=False, other=False)
+        else:
+            bev_type = BeverageType(beer=False, cider=False, kombucha=False, other=True)
+        return bev_type
 
 
 @dataclass()
@@ -251,201 +429,3 @@ class MoySklad:
 
         return [Good(**good) for good in goods]
 
-
-_TRASH: Tuple = (
-    " (0,75)",
-    " (0,33)",
-    " Бутылка 0,75",
-    " ж\б",
-    " (ж/б)",
-    " (0,5)",
-)
-
-_MODIFICATION_SET: Dict = {
-    "Банка 0,33": 0.33,
-    "Банка 0,45": 0.45,
-    "Бутылка 0,33": 0.33,
-    "Бутылка 0,375": 0.375,
-    "Бутылка 0,5": 0.5,
-    "Бутылка 0,75": 0.75,
-    "ж.б 0,33": 0.33,
-    "ж/б 0,5": 0.5,
-}
-
-
-def _is_draft(attr: Dict = None) -> bool:
-    # Если в сервисе у товара определен аттрибут "Розлив", то индекс аттрибута "Алкогольная продукция",
-    # в массиве аттрибутов будет 1, если не определен, то индекс будет 0. это происходит т.к. аттрибут
-    # "Алкогольная продукция", является обязательным для всех товаров
-    #
-    # Признак алкогольной продукции
-    # дополнительное поле "Алкогольная продукция" в массиве ['attributes'] - элемент с индексом 1
-    # True - чек-бокс установлен, False - не установлен
-    # проверяем, что аттрибут "Алкогольная продукция" == True
-    # Если есть аттрибут алкогольной продукции
-    is_draft: bool = False
-
-    # Если у товара определен аттрибут розлива
-    if attr is not None:
-        if len(attr) == 2:
-            is_draft = True if attr[0].value.lower() == "да" else False
-    return is_draft
-
-
-def _remove_trash_from_string(in_str: str) -> str:
-    """Метод вырезает из входной строки мусор, определённый в кортеже _TRASH()."""
-    for trash_element in _TRASH:
-        in_str = in_str.replace(trash_element, "")
-    return in_str
-
-
-def _remove_modification_from_name(name: str = "", modification=None) -> str:
-    """Метод удаляет из входной строки название модификации "Тара", определенных в _MODIFICATION_SET()."""
-    if modification:
-        for mod in modification:
-            if mod.name == "Тара":
-                return name.replace(f" ({mod.value})", "")
-    return name
-
-
-def _get_capacity(cap: float = None, modification: Dict = None) -> float:
-    """Метод возвращает объем продукции."""
-    # Модификации в сервисе не имеют аттрибут объем, но название модификации будет иметь вид
-    # Alaska - Нигилист (Lager - IPL (India Pale Lager). OG 16%, ABV 6,8%, IBU 60) (Название модификации)
-    # Все модификации сделаны для разделения по объемам
-    capacity: float = 0.0
-    if cap is not None:
-        return cap
-
-    if modification[0].name == "Тара":
-        for _capacity in _MODIFICATION_SET:
-            if _capacity == modification[0].value:
-                capacity = float(_MODIFICATION_SET[_capacity])
-    return capacity
-
-
-class Characteristics(Enum):
-    """Перечисление используемое для получения характеристик продукта при парсинге строки продукта."""
-
-    ABV = "abv"
-    OG = "og"
-    IBU = "ibu"
-
-
-class BeverageType(NamedTuple):
-    """Класс описывает ти продукта."""
-
-    beer: bool
-    cider: bool
-    kombucha: bool
-    other: bool
-
-
-def _get_additional_info(f_name: str = "") -> str:
-    """Метод возвращает строку информации, содержащей стиль, плотность, содержание алкоголя.
-
-    Например:
-    'Coven - GLAM (Lager - IPL (India Pale Lager). ABV 5.5%, IBU 15)' вернется 'Lager - IPL (India Pale Lager). ABV 5.5%,IBU 15',
-    'Molson Coors (UK) - Carling Original (Lager - Pale. ABV 3,7%)' вернется 'Lager - Pale. ABV 3,7%',
-    'Barista Chocolate Quad (Belgian Quadrupel. ABV 11%)' вернется 'Belgian Quadrupel. ABV 11%',
-    """
-    add_info: str
-
-    if f_name != "":
-        regex = r"\(([^()]*(?:\([^()]*\)[^()]*)*)\)$"
-        matches = re.findall(regex, f_name)
-        if len(matches) != 0:
-            add_info = matches[0]
-            return add_info
-    return ""
-
-
-def _get_style(add_info: str = "") -> str:
-    """Метод возвращает строку информации, содержащей стиль.
-
-    Например:
-    'Lager - IPL (India Pale Lager). ABV 5.5%, IBU 15' вернется 'Lager - IPL (India Pale Lager)',
-    'Lager - Pale. ABV 3,7%' вернется 'Lager - Pale',
-    'Belgian Quadrupel. ABV 11%' вернется 'Belgian Quadrupel',
-    """
-    if add_info != "":
-        return add_info.split(". ")[0]
-    return ""
-
-
-def _get_characteristics(type_: Characteristics, add_info: str = "") -> float:
-    """Метод возвращает число - количественный параметр, выбранный из параметра add_info в зависимости от переданного параметра type_.
-
-    Например:
-    type_ = ABV
-    add_info = 'Lager - IPL (India Pale Lager). ABV 5.5%, IBU 15'
-    вернется 5.5
-    type_ = IBU
-    add_info = 'Lager - IPL (India Pale Lager). ABV 5.5%, IBU 15'
-    вернется 15
-    type_ = OG
-    add_info = 'Lager - IPL (India Pale Lager). ABV 5.5%, IBU 15'
-    вернется 0
-    """
-    if not add_info or (". " not in add_info):
-        return 0
-
-    for _info in add_info.split(". ")[1].split(", "):
-        if _info.lower().find(type_.value) != -1:
-            return float(
-                _info.lower()
-                .replace(f"{type_.value} ", "")
-                .replace(",", ".")
-                .replace("%", "")
-            )
-    return 0
-
-
-def _get_brewery(f_name: str = "", add_info: str = "", parent_path: str = "") -> str:
-    """Метод возвращает название пивоварни, вырезанной из строки f_name.
-
-    'Кер Сари Пшеничное (Wheat Beer - Other. ABV 4,5%)' вернет '',
-    'Butch & Dutch - IPA 100 IBU (IPA - International. ABV 7%, IBU 100)' вернет 'Butch & Dutch',
-    'Trappistes Rochefort 6 (Belgian Dubbel. ABV 7,5%, IBU 22)' вернет '',
-    'Fournier - Frères Producteurs - Eleveurs - Cidre Rose (Cider - Rose. ABV 3%)' вернет parent_path,
-    'Shepherd Neame - Classic Collection - India Pale Ale (IPA - English. OG 14,6%, ABV 6,1%)' вернет parent_path
-    """
-    brewery: str = ""
-    if add_info != "" and f_name != "":
-        f_name = f_name.replace(f" ({add_info})", "")
-        if f_name.count(" - ") == 1:
-            brewery = "".join(f_name.split(" - ")[:-1])
-        elif parent_path is not None:
-            brewery = parent_path.split("/")[-1]
-    return brewery
-
-
-def _get_name(f_name: str = "", add_info: str = "", brewery: str = "") -> str:
-    """Метод возвращает название продукта, вырезанной из строки f_name.
-
-    'Кер Сари Пшеничное (Wheat Beer - Other. ABV 4,5%)' вернет 'Кер Сари Пшеничное',
-    'Butch & Dutch - IPA 100 IBU (IPA - International. ABV 7%, IBU 100)' вернет 'IPA 100 IBU',
-    'Trappistes Rochefort 6 (Belgian Dubbel. ABV 7,5%, IBU 22)' вернет 'Trappistes Rochefort 6',
-    'Fournier - Frères Producteurs - Eleveurs - Cidre Rose (Cider - Rose. ABV 3%)' вернет '',
-    'Shepherd Neame - Classic Collection - India Pale Ale (IPA - English. OG 14,6%, ABV 6,1%)' вернет ''
-    """
-    name = ""
-    if add_info != "" and f_name != "":
-        name = f_name.replace(f" ({add_info})", "")
-        if brewery:
-            name = name.replace(f"{brewery} - ", "")
-    return name
-
-
-def _get_good_type(add_info: str = "") -> BeverageType:
-    """Метод возвращает тип продукта пиво, сидр, комбуча, вырезанной из строки add_info."""
-    if add_info != "":
-        if add_info.lower().find("cider") != -1:
-            bev_type = BeverageType(beer=False, cider=True, kombucha=False, other=False)
-        elif add_info.lower().find("kombucha") != -1:
-            bev_type = BeverageType(beer=False, cider=False, kombucha=True, other=False)
-        else:
-            bev_type = BeverageType(beer=True, cider=False, kombucha=False, other=False)
-    else:
-        bev_type = BeverageType(beer=False, cider=False, kombucha=False, other=True)
-    return bev_type
