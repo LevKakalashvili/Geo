@@ -1,9 +1,8 @@
 """В модуле хранятся описание классов."""
 import re
 from dataclasses import dataclass
-from enum import Enum
 from typing import Any, Dict, List, NamedTuple, Optional, Union
-from Sync_app.moysklad.moysklad_constants import _TRASH, _MODIFICATION_SET
+from Sync_app.moysklad.moysklad_constants import _TRASH, _MODIFICATION_SET, GoodType, Characteristics
 import requests
 import Sync_app.moysklad.moysklad_urls as ms_urls
 import Sync_app.privatedata.moysklad_privatedata as ms_pvdata
@@ -32,39 +31,10 @@ class GoodTuple(NamedTuple):
     ibu: int = 0
     is_alco: bool = False
     is_draft: bool = False
-    is_cider: bool = False
-    is_beer: bool = False
+    # is_cider: bool = False
+    # is_beer: bool = False
+    type: GoodType = GoodType.OTHER
     capacity: float = 0.0
-
-
-class GoodsType(Enum):
-    """Перечисление для определения, какой тип товаров необходимо получить.
-
-    alco - алкогольная продукция (исключая разливное пиво).
-    non_alco - не алкогольная продукция
-    snack - закуски
-    """
-
-    alco = 1
-    non_alco = 2
-    snack = 3
-
-
-class Characteristics(Enum):
-    """Перечисление используемое для получения характеристик продукта при парсинге строки продукта."""
-
-    ABV = "abv"
-    OG = "og"
-    IBU = "ibu"
-
-
-class BeverageType(NamedTuple):
-    """Класс описывает ти продукта."""
-
-    beer: bool
-    cider: bool
-    kombucha: bool
-    other: bool
 
 
 class Attributes(BaseModel):
@@ -157,8 +127,8 @@ class Good(BaseModel):
             bev_type = self._get_good_type(additional_info)
 
             style = self._get_style(additional_info)
-            is_cider = bev_type.cider
-            is_beer = bev_type.beer
+            # is_cider = bev_type.cider
+            # is_beer = bev_type.beer
             abv = self._get_characteristics(
                 type_=Characteristics.ABV, add_info=additional_info
             )
@@ -189,8 +159,9 @@ class Good(BaseModel):
                 abv=abv,
                 ibu=int(ibu),
                 is_alco=is_alco,
-                is_cider=is_cider,
-                is_beer=is_beer,
+                # is_cider=is_cider,
+                # is_beer=is_beer,
+                type=bev_type.value,
                 is_draft=is_draft,
                 capacity=capacity,
             )
@@ -344,17 +315,18 @@ class Good(BaseModel):
         return name
 
     @staticmethod
-    def _get_good_type(add_info: str = "") -> BeverageType:
+    def _get_good_type(add_info: str = "") -> GoodType:
         """Метод возвращает тип продукта пиво, сидр, комбуча, вырезанной из строки add_info."""
+        bev_type: GoodType = GoodType.OTHER
         if add_info != "":
-            if add_info.lower().find("cider") != -1:
-                bev_type = BeverageType(beer=False, cider=True, kombucha=False, other=False)
-            elif add_info.lower().find("kombucha") != -1:
-                bev_type = BeverageType(beer=False, cider=False, kombucha=True, other=False)
-            else:
-                bev_type = BeverageType(beer=True, cider=False, kombucha=False, other=False)
-        else:
-            bev_type = BeverageType(beer=False, cider=False, kombucha=False, other=True)
+            if add_info.lower().find(GoodType.BEER.value) != -1:
+                bev_type = GoodType.BEER
+            elif add_info.lower().find(GoodType.CIDER.value) != -1:
+                bev_type = GoodType.CIDER
+            elif add_info.lower().find(GoodType.MEAD.value) != -1:
+                bev_type = GoodType.MEAD
+            elif add_info.lower().find(GoodType.KOMBUCHA.value) != -1:
+                bev_type = GoodType.KOMBUCHA
         return bev_type
 
 

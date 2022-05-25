@@ -1,4 +1,5 @@
 from typing import Dict, Tuple
+from enum import Enum
 
 _TRASH: Tuple = (
     " (0,75)",
@@ -19,3 +20,31 @@ _MODIFICATION_SET: Dict = {
     "ж.б 0,33": 0.33,
     "ж/б 0,5": 0.5,
 }
+
+
+class GoodType(Enum):
+    BEER = 'beer',
+    CIDER = 'cider',
+    KOMBUCHA = 'kombucha',
+    LEMONADE = 'lemonade',
+    MEAD = 'mead',
+    OTHER = 'other'
+
+
+class AlcoType(Enum):
+    """Перечисление для определения, какой тип товаров необходимо получить.
+
+    alco - алкогольная продукция (исключая разливное пиво).
+    non_alco - не алкогольная продукция
+    """
+
+    alco = 1
+    non_alco = 2
+
+
+class Characteristics(Enum):
+    """Перечисление используемое для получения характеристик продукта при парсинге строки продукта."""
+
+    ABV = "abv"
+    OG = "og"
+    IBU = "ibu"

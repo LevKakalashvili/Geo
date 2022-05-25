@@ -4,6 +4,7 @@ from typing import List
 from django.db import models
 from Sync_app.models.konturmarket_models import KonturMarketDBGood
 from Sync_app.moysklad.moysklad_class_lib import Good as MoySkladGood
+from Sync_app.moysklad.moysklad_constants import GoodType
 
 
 class MoySkladDBGood(models.Model):
@@ -50,9 +51,11 @@ class MoySkladDBGood(models.Model):
     # Признак разливного пива
     is_draft = models.BooleanField(help_text="Признак разливного пива", default=False)
     # Признак сидр или нет
-    is_cider = models.BooleanField(help_text="Признак сидра", default=False)
+    #   is_cider = models.BooleanField(help_text="Признак сидра", default=False)
     # Признак пиво или нет
-    is_beer = models.BooleanField(help_text="Признак пива", default=False)
+    #   is_beer = models.BooleanField(help_text="Признак пива", default=False)
+    # Тип продукта (пиво, сидр, медовуха, комбуча, лимонад)
+    type = models.CharField(max_length=8, choices=[(tag, tag.value) for tag in GoodType], help_text="Тип продукта")
     # Емкость тары
     capacity = models.DecimalField(max_digits=5, decimal_places=3, help_text="Емкость тары")
     # Код ЕГАИС
@@ -106,10 +109,11 @@ class MoySkladDBGood(models.Model):
                 ibu=parsed_name.ibu,
                 is_alco=parsed_name.is_alco,
                 is_draft=parsed_name.is_draft,
-                is_cider=parsed_name.is_cider,
+                # is_cider=parsed_name.is_cider,
+                type=parsed_name.type,
                 style=parsed_name.style,
                 capacity=parsed_name.capacity,
-                is_beer=parsed_name.is_beer,
+                # is_beer=parsed_name.is_beer,
             )
             good.save()
             # Заполняем остатки
