@@ -2,6 +2,8 @@
 from typing import List
 
 from django.db import models
+from django.db.models import CheckConstraint, Q
+
 from Sync_app.models.konturmarket_models import KonturMarketDBGood
 from Sync_app.moysklad.moysklad_class_lib import Good as MoySkladGood
 from Sync_app.moysklad.moysklad_constants import GoodType
@@ -55,7 +57,7 @@ class MoySkladDBGood(models.Model):
     # Признак пиво или нет
     #   is_beer = models.BooleanField(help_text="Признак пива", default=False)
     # Тип продукта (пиво, сидр, медовуха, комбуча, лимонад)
-    type = models.CharField(max_length=8, choices=[(tag, tag.value) for tag in GoodType], help_text="Тип продукта")
+    type = models.CharField(max_length=8, choices=[(''.join(element.value), ''.join(element.value) )for element in GoodType], help_text="Тип продукта")
     # Емкость тары
     capacity = models.DecimalField(max_digits=5, decimal_places=3, help_text="Емкость тары")
     # Код ЕГАИС
@@ -80,6 +82,13 @@ class MoySkladDBGood(models.Model):
                     "name",
                 ]
             ),
+        ]
+
+        constraints = [
+            CheckConstraint(
+                check=Q(type__in=[''.join(element.value) for element in GoodType]),
+                name='valid_good_type'
+            )
         ]
 
     @staticmethod
