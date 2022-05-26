@@ -22,14 +22,11 @@ class MoySkladDBGood(models.Model):
     # Родительский UUID товара
     parent_uuid = models.CharField(
         max_length=36,
-        help_text="Уникальный идентификатор родительского товара. "
-        "Для модификация товаров",
+        help_text="Уникальный идентификатор родительского товара. " "Для модификация товаров",
     )
     # Полное наименование товара.
     # Использовать нужно только для связки данных из КонтурМаркет
-    full_name = models.CharField(
-        max_length=200, unique=True, help_text="Полное имя товара"
-    )
+    full_name = models.CharField(max_length=200, unique=True, help_text="Полное имя товара")
     # Путь, папка
     path_name = models.CharField(max_length=100, help_text="Папка товара")
     # Стиль
@@ -47,9 +44,7 @@ class MoySkladDBGood(models.Model):
     # Горечь
     ibu = models.PositiveSmallIntegerField(help_text="Горечь")
     # Признак алкогольной продукции
-    is_alco = models.BooleanField(
-        help_text="Признак алкогольного напитка", default=False
-    )
+    is_alco = models.BooleanField(help_text="Признак алкогольного напитка", default=False)
     # Признак разливного пива
     is_draft = models.BooleanField(help_text="Признак разливного пива", default=False)
     # Признак сидр или нет
@@ -57,13 +52,15 @@ class MoySkladDBGood(models.Model):
     # Признак пиво или нет
     #   is_beer = models.BooleanField(help_text="Признак пива", default=False)
     # Тип продукта (пиво, сидр, медовуха, комбуча, лимонад)
-    type = models.CharField(max_length=8, choices=[(''.join(element.value), ''.join(element.value) )for element in GoodType], help_text="Тип продукта")
+    type = models.CharField(
+        max_length=8,
+        choices=[("".join(element.value), "".join(element.value)) for element in GoodType],
+        help_text="Тип продукта",
+    )
     # Емкость тары
     capacity = models.DecimalField(max_digits=5, decimal_places=3, help_text="Емкость тары")
     # Код ЕГАИС
-    egais_code = models.ManyToManyField(
-        KonturMarketDBGood, help_text="Код алкогольной продукции"
-    )
+    egais_code = models.ManyToManyField(KonturMarketDBGood, help_text="Код алкогольной продукции")
 
     class Meta:
         indexes = [
@@ -85,10 +82,7 @@ class MoySkladDBGood(models.Model):
         ]
 
         constraints = [
-            CheckConstraint(
-                check=Q(type__in=[''.join(element.value) for element in GoodType]),
-                name='valid_good_type'
-            )
+            CheckConstraint(check=Q(type__in=["".join(element.value) for element in GoodType]), name="valid_good_type")
         ]
 
     @staticmethod
@@ -118,11 +112,9 @@ class MoySkladDBGood(models.Model):
                 ibu=parsed_name.ibu,
                 is_alco=parsed_name.is_alco,
                 is_draft=parsed_name.is_draft,
-                # is_cider=parsed_name.is_cider,
                 type=parsed_name.type,
                 style=parsed_name.style,
                 capacity=parsed_name.capacity,
-                # is_beer=parsed_name.is_beer,
             )
             good.save()
             # Заполняем остатки
