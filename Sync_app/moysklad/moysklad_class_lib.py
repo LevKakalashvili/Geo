@@ -118,38 +118,27 @@ class Good(BaseModel):
 
     def _parse_object(self) -> GoodTuple:
         if self.name:
-            full_name = self._remove_modification_from_name(
-                name=self.name, modification=self.modifications
-            )
+            full_name = self._remove_modification_from_name(name=self.name, modification=self.modifications)
             full_name = self._remove_trash_from_string(full_name)
 
             additional_info = self._get_additional_info(f_name=full_name)
             bev_type = self._get_good_type(additional_info)
 
             style = self._get_style(additional_info)
-            # is_cider = bev_type.cider
-            # is_beer = bev_type.beer
-            abv = self._get_characteristics(
-                type_=Characteristics.ABV, add_info=additional_info
-            )
+            abv = self._get_characteristics(type_=Characteristics.ABV, add_info=additional_info)
             is_alco = True if abv > 1 else False
-            og = self._get_characteristics(
-                type_=Characteristics.OG, add_info=additional_info
-            )
-            ibu = self._get_characteristics(
-                type_=Characteristics.IBU, add_info=additional_info
-            )
-            brewery = self._get_brewery(
-                f_name=full_name, add_info=additional_info, parent_path=self.path_name
-            )
-            name = self._get_name(
-                f_name=full_name, add_info=additional_info, brewery=brewery
-            )
+            og = self._get_characteristics(type_=Characteristics.OG, add_info=additional_info)
+            ibu = self._get_characteristics(type_=Characteristics.IBU, add_info=additional_info)
+            try:
+                a = self.path_name
+            except Exception:
+                a = 1
+
+            brewery = self._get_brewery(f_name=full_name, add_info=additional_info, parent_path=self.path_name)
+            name = self._get_name(f_name=full_name, add_info=additional_info, brewery=brewery)
 
             is_draft = self._is_draft(attr=self.attributes)
-            capacity = self._get_capacity(
-                cap=dict(self).get("volume"), modification=self.modifications
-            )
+            capacity = self._get_capacity(cap=dict(self).get("volume"), modification=self.modifications)
 
             return GoodTuple(
                 brewery=brewery,
@@ -159,11 +148,9 @@ class Good(BaseModel):
                 abv=abv,
                 ibu=int(ibu),
                 is_alco=is_alco,
-                # is_cider=is_cider,
-                # is_beer=is_beer,
-                type=bev_type.value,
+                type=bev_type,
                 is_draft=is_draft,
-                capacity=capacity,
+                capacity=capacity
             )
         return GoodTuple()
 
@@ -272,12 +259,7 @@ class Good(BaseModel):
 
         for _info in add_info.split(". ")[1].split(", "):
             if _info.lower().find(type_.value) != -1:
-                return float(
-                    _info.lower()
-                    .replace(f"{type_.value} ", "")
-                    .replace(",", ".")
-                    .replace("%", "")
-                )
+                return float(_info.lower().replace(f"{type_.value} ", "").replace(",", ".").replace("%", ""))
         return 0
 
     @staticmethod
@@ -321,15 +303,15 @@ class Good(BaseModel):
         """Метод возвращает тип продукта пиво, сидр, комбуча, вырезанной из строки add_info."""
         bev_type: GoodType = GoodType.OTHER
         if add_info != "":
-            if add_info.lower().find(GoodType.BEER.value) != -1:
-                bev_type = GoodType.BEER
-            elif add_info.lower().find(GoodType.CIDER.value) != -1:
+            if ''.join(GoodType.CIDER.value) in add_info.lower():
                 bev_type = GoodType.CIDER
-            elif add_info.lower().find(GoodType.MEAD.value) != -1:
+            elif ''.join(GoodType.MEAD.value) in add_info.lower():
                 bev_type = GoodType.MEAD
-            elif add_info.lower().find(GoodType.KOMBUCHA.value) != -1:
+            elif ''.join(GoodType.KOMBUCHA.value) in add_info.lower():
                 bev_type = GoodType.KOMBUCHA
-        return bev_type
+            else:
+                bev_type = GoodType.BEER
+        return ''.join(bev_type.value)
 
 
 @dataclass()
@@ -384,9 +366,7 @@ class MoySklad:
 
         while need_request:
             # Получаем url для отправки запроса в сервис
-            url: ms_urls.MoySkladUrl = ms_urls.get_url(
-                ms_urls.UrlType.ASSORTMENT, offset=counter * 1000
-            )
+            url: ms_urls.MoySkladUrl = ms_urls.get_url(ms_urls.UrlType.ASSORTMENT, offset=counter * 1000)
 
             response = requests.get(url.url, url.request_filter, headers=header)
             if not response.ok:

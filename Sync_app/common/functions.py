@@ -11,7 +11,7 @@ def string_title(list_: Optional[List[str]]) -> str:
     if isinstance(list_, list) and len(list_) == 1:
         str_ = ''.join(list_)
     else:
-        str_ = list_
+        str_ = str(list_)
 
     # Эффект Домино [Ba Cognac]
     if "[Bа Cognac] " in str_:
