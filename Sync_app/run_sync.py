@@ -1,4 +1,6 @@
 import os
+import sys
+
 import django
 from typing import List
 
@@ -16,12 +18,15 @@ from Sync_app.models.moysklad_models import MoySkladDBGood as db_ms_good
 if __name__ == "__main__":
     # Получаем ассортимент из МойСклад
     ms_goods = ms.get_assortment()
-
+    if not ms_goods:
+        sys.exit()
     # Обновляем БД объектами ассортимента МойСклад
     db_ms_good.save_objects_to_db(list_ms_goods=ms_goods)
 
     # Получаем ассортимент КонтурМаркет
     km_goods = kmarket.get_egais_assortment()
+    if not ms_goods:
+        sys.exit()
     # Обновляем БД объектами справочника из сервиса КонтурМаркет
     db_km_good.save_objects_to_db(list_km_goods=km_goods)
 
