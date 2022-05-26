@@ -67,7 +67,7 @@ class StockEGAIS(BaseModel):
 class KonturMarket:
     """Класс описывает работу с сервисом Контур.Маркет https://market.kontur.ru/."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         # Переменная устанавливается в True, в случае успешного логина в сервисе
         self.connection_ok: bool = False
 
