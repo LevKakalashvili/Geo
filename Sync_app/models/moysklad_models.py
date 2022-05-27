@@ -12,6 +12,31 @@ from Sync_app.moysklad.moysklad_constants import GoodType
 class MoySkladDBGood(models.Model):
     """Класс описывает модель для работы с товарами из сервиса МойСклад."""
 
+    class Meta:
+        """Индексы и ограничения для таблицы."""
+
+        indexes = [
+            models.Index(
+                fields=[
+                    "full_name",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "brewery",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "name",
+                ]
+            ),
+        ]
+
+        constraints = [
+            CheckConstraint(check=Q(type__in=["".join(element.value) for element in GoodType]), name="valid_good_type")
+        ]
+
     # UUID товара
     uuid = models.CharField(
         primary_key=True,
@@ -47,43 +72,19 @@ class MoySkladDBGood(models.Model):
     is_alco = models.BooleanField(help_text="Признак алкогольного напитка", default=False)
     # Признак разливного пива
     is_draft = models.BooleanField(help_text="Признак разливного пива", default=False)
-    # Признак сидр или нет
-    #   is_cider = models.BooleanField(help_text="Признак сидра", default=False)
-    # Признак пиво или нет
-    #   is_beer = models.BooleanField(help_text="Признак пива", default=False)
     # Тип продукта (пиво, сидр, медовуха, комбуча, лимонад)
-    type = models.CharField(
+    bev_type = models.CharField(
         max_length=8,
         choices=[("".join(element.value), "".join(element.value)) for element in GoodType],
         help_text="Тип продукта",
+        db_column="type",
     )
     # Емкость тары
     capacity = models.DecimalField(max_digits=5, decimal_places=3, help_text="Емкость тары")
     # Код ЕГАИС
     egais_code = models.ManyToManyField(KonturMarketDBGood, help_text="Код алкогольной продукции")
 
-    class Meta:
-        indexes = [
-            models.Index(
-                fields=[
-                    "full_name",
-                ]
-            ),
-            models.Index(
-                fields=[
-                    "brewery",
-                ]
-            ),
-            models.Index(
-                fields=[
-                    "name",
-                ]
-            ),
-        ]
 
-        constraints = [
-            CheckConstraint(check=Q(type__in=["".join(element.value) for element in GoodType]), name="valid_good_type")
-        ]
 
     @staticmethod
     def save_objects_to_db(list_ms_goods: List[MoySkladGood]) -> None:
@@ -116,7 +117,10 @@ class MoySkladDBGood(models.Model):
                 style=parsed_name.style,
                 capacity=parsed_name.capacity,
             )
-            good.save()
+            try:
+                good.save()
+            except Exception:
+                a = 1
             # Заполняем остатки
             stocks = MoySkladDBStock(
                 uuid=good,

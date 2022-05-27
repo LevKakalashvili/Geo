@@ -2,6 +2,7 @@
 from typing import List
 
 from django.db import models
+
 from Sync_app.konturmarket.konturmarket_class_lib import StockEGAIS
 
 
@@ -18,16 +19,27 @@ class KonturMarketDBProducer(models.Model):
     inn = models.CharField(max_length=12, help_text="ИНН производителя", null=True)
 
     short_name = models.CharField(
-        max_length=200, help_text="Короткое наименование производителя"
+        max_length=200, help_text="Короткое наименование производителя",
     )
 
     full_name = models.CharField(
-        max_length=255, help_text="Полное наименование производителя"
+        max_length=255, help_text="Полное наименование производителя",
     )
 
 
 class KonturMarketDBGood(models.Model):
     """Класс описывает модель для работы с товарами из сервиса МойСклад."""
+
+    class Meta:
+        """Индексы."""
+
+        indexes = [
+            models.Index(
+                fields=[
+                    "full_name",
+                ],
+            ),
+        ]
 
     # Код алкогольной продукции
     egais_code = models.CharField(
@@ -42,14 +54,7 @@ class KonturMarketDBGood(models.Model):
     # 2. разные импортеры, дилеры могут поставить разные кода АП
     # поэтому уникальность поля не требуется
     full_name = models.CharField(
-        max_length=200, help_text="Полное ЕГАИС наименование товара"
-    )
-
-    # Внешний ключ на модель, таблицу производителя
-    fsrar = models.ForeignKey(
-        KonturMarketDBProducer,
-        on_delete=models.CASCADE,
-        help_text="Уникальный ЕГАИС идентификатор производителя",
+        max_length=200, help_text="Полное ЕГАИС наименование товара",
     )
 
     # Объем продукции. Если не указан, то считаем, что позиция разливная и нужно выставить флаг,
@@ -66,14 +71,12 @@ class KonturMarketDBGood(models.Model):
         help_text="Признак разливного пива",
     )
 
-    class Meta:
-        indexes = [
-            models.Index(
-                fields=[
-                    "full_name",
-                ]
-            ),
-        ]
+    # Внешний ключ на модель, таблицу производителя
+    fsrar = models.ForeignKey(
+        KonturMarketDBProducer,
+        on_delete=models.CASCADE,
+        help_text="Уникальный ЕГАИС идентификатор производителя",
+    )
 
     @staticmethod
     def save_objects_to_db(list_km_goods: List[StockEGAIS]) -> None:
@@ -96,7 +99,8 @@ class KonturMarketDBGood(models.Model):
                 fsrar=producer,
                 # Если нет объема продукции, то считаем, что товар разливной, объемом 99 л
                 capacity=km_good.good.capacity if km_good.good.capacity else 99,
-                is_draft=km_good.good.capacity > 10,
+                # Т.к. km_good.good.capacity может быть None
+                is_draft=True if km_good.good.capacity is None or km_good.good.capacity > 10 else False,
             )
 
             stock = KonturMarketDBStock(quantity=km_good.quantity_2, egais_code=good)

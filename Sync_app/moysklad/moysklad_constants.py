@@ -1,7 +1,7 @@
-from typing import Dict, Tuple
 from enum import Enum
+from typing import Dict, Tuple
 
-_TRASH: Tuple = (
+_TRASH: Tuple[str, ...] = (
     " (0,75)",
     " (0,33)",
     " Бутылка 0,75",
@@ -10,7 +10,7 @@ _TRASH: Tuple = (
     " (0,5)",
 )
 
-_MODIFICATION_SET: Dict = {
+_MODIFICATION_SET: Dict[str, float] = {
     "Банка 0,33": 0.33,
     "Банка 0,45": 0.45,
     "Бутылка 0,33": 0.33,

@@ -1,9 +1,7 @@
 """Модуль для работы с Google Sheets."""
 import os
 from dataclasses import dataclass
-from typing import Any
-from typing import List
-from typing import NamedTuple
+from typing import Any, List, NamedTuple
 
 import googleapiclient.discovery
 import httplib2
@@ -22,16 +20,12 @@ class CompilanceRow(NamedTuple):
     @property
     def brewery(self) -> str:
         """Название пивоварни."""
-        return (
-            self.commercial_name.split(" - ")[0]
-            if len(self.commercial_name.split(" - ")) > 1
-            else ""
-        )
+        return self.commercial_name.split(" - ")[0] if len(self.commercial_name.split(" - ")) > 1 else ""
 
     @property
     def name(self) -> str:
         """Название продукта."""
-        separator = ' - '
+        separator = " - "
         count = self.commercial_name.count(separator)
         name: str
         if count == 0:
@@ -72,16 +66,15 @@ class GoogleSheets:
 
         return True
 
-    def get_data(
-        self, spreadsheets_id: str, list_name: str, list_range: str
-    ) -> List[List[str]]:
+    def get_data(self, spreadsheets_id: str, list_name: str, list_range: str) -> List[List[str]]:
         """Метод получения данных из таблицы GoogleSheets.
 
         :param spreadsheets_id: id таблицы в Google Sheets
         :param list_name: текстовое имя листа
         :param list_range: запрашиваемый диапазон A1:H100
-        :return: Возвращает список списков [[], []..]. Каждый элемент списка - список из 2 элементов. 1 - коммерческое # pylint: disable=line-too-long
-                название, 2 - наименование ЕГАИС. Пустой список в случае не удачи.
+        :return: Возвращает список списков [[], []..]. Каждый элемент списка - список из 2 элементов.
+            1 - коммерческое # pylint: disable=line-too-long название,
+            2 - наименование ЕГАИС. Пустой список в случае не удачи.
         """
         if not spreadsheets_id or not list_name or not list_range:
             return []
@@ -99,7 +92,8 @@ class GoogleSheets:
         if not values["values"]:
             return []
 
-        # googlesheets отдает диапазон, отсекая в запрашиваемом диапазоне пустые ячейки снизу, но пустые строки # pylint: disable=line-too-long
+        # googlesheets отдает диапазон, отсекая в запрашиваемом диапазоне пустые ячейки снизу,
+        # но пустые строки # pylint: disable=line-too-long
         # могут оказаться в середине текста
         # отсортируем, чтобы пустые строки оказались вверху, а потом удалим их
         values = sorted(values["values"])
@@ -108,9 +102,7 @@ class GoogleSheets:
             i += 1
         return values[i:]
 
-    def send_data(
-        self, data: List[Any], spreadsheets_id: str, list_name: str, list_range: str
-    ) -> bool:
+    def send_data(self, data: List[Any], spreadsheets_id: str, list_name: str, list_range: str) -> bool:
         """Метод записи данных в таблицу GoogleSheets.
 
         :param data: Данные для записи.
@@ -122,7 +114,7 @@ class GoogleSheets:
         # В начале очищаем диапазон.
         # https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets.values/clear?hl=ru
         self.service.spreadsheets().values().clear(
-            spreadsheetId=spreadsheets_id, range=f"{list_name}!{list_range}", body={}
+            spreadsheetId=spreadsheets_id, range=f"{list_name}!{list_range}", body={},
         ).execute()
         # Записываем данные
         self.service.spreadsheets().values().batchUpdate(

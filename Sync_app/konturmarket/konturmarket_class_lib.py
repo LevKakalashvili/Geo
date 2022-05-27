@@ -7,11 +7,13 @@ import requests
 from pydantic import BaseModel, Field
 
 import Sync_app.privatedata.kontrurmarket_privatedata as km_pvdata
-from Sync_app.konturmarket.konturmarket_urls import KonturMarketUrl, UrlType, get_url
+from Sync_app.konturmarket.konturmarket_urls import (
+    KonturMarketUrl, UrlType, get_url,
+)
 
 
 class Brewery(BaseModel):
-    """Класс описывает структуру компании производителя, продукции в соответствии с терминами ЕГАИС. Словарь 'producer' в JSON представлении."""
+    """Класс описывает структуру производителя продукции в соответствии с терминами ЕГАИС. Словарь 'producer' в JSON представлении."""
 
     # Короткое наименование производителя
     short_name: str = Field(alias="shortName")
@@ -68,6 +70,7 @@ class KonturMarket:
     """Класс описывает работу с сервисом Контур.Маркет https://market.kontur.ru/."""
 
     def __init__(self) -> None:
+        """Конструктор."""
         # Переменная устанавливается в True, в случае успешного логина в сервисе
         self.connection_ok: bool = False
 

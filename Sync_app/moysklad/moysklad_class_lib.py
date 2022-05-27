@@ -2,11 +2,15 @@
 import re
 from dataclasses import dataclass
 from typing import Any, Dict, List, NamedTuple, Optional, Union
-from Sync_app.moysklad.moysklad_constants import _TRASH, _MODIFICATION_SET, GoodType, Characteristics
+
 import requests
+from pydantic import BaseModel, Field
+
 import Sync_app.moysklad.moysklad_urls as ms_urls
 import Sync_app.privatedata.moysklad_privatedata as ms_pvdata
-from pydantic import BaseModel, Field
+from Sync_app.moysklad.moysklad_constants import (
+    _MODIFICATION_SET, _TRASH, Characteristics, GoodType,
+)
 
 
 class GoodTuple(NamedTuple):
@@ -129,12 +133,11 @@ class Good(BaseModel):
             is_alco = True if abv > 1 else False
             og = self._get_characteristics(type_=Characteristics.OG, add_info=additional_info)
             ibu = self._get_characteristics(type_=Characteristics.IBU, add_info=additional_info)
-            try:
-                a = self.path_name
-            except Exception:
-                a = 1
-
-            brewery = self._get_brewery(f_name=full_name, add_info=additional_info, parent_path=self.path_name)
+            brewery = self._get_brewery(
+                f_name=full_name,
+                add_info=additional_info,
+                parent_path=self.path_name if self.path_name else "",
+            )
             name = self._get_name(f_name=full_name, add_info=additional_info, brewery=brewery)
 
             is_draft = self._is_draft(attr=self.attributes)
@@ -150,12 +153,12 @@ class Good(BaseModel):
                 is_alco=is_alco,
                 type=bev_type,
                 is_draft=is_draft,
-                capacity=capacity
+                capacity=capacity,
             )
         return GoodTuple()
 
     @staticmethod
-    def _is_draft(attr: Dict = None) -> bool:
+    def _is_draft(attr: List[Attributes] = None) -> bool:
         # Если в сервисе у товара определен аттрибут "Розлив", то индекс аттрибута "Алкогольная продукция",
         # в массиве аттрибутов будет 1, если не определен, то индекс будет 0. это происходит т.к. аттрибут
         # "Алкогольная продукция", является обязательным для всех товаров
@@ -170,7 +173,7 @@ class Good(BaseModel):
         # Если у товара определен аттрибут розлива
         if attr is not None:
             if len(attr) == 2:
-                is_draft = True if attr[0].value.lower() == "да" else False
+                is_draft = True if str(attr[0].value).lower() == "да" else False
         return is_draft
 
     @staticmethod
@@ -181,7 +184,7 @@ class Good(BaseModel):
         return in_str
 
     @staticmethod
-    def _remove_modification_from_name(name: str = "", modification=None) -> str:
+    def _remove_modification_from_name(name: str = "", modification: List[Modification] = None) -> str:
         """Метод удаляет из входной строки название модификации "Тара", определенных в _MODIFICATION_SET()."""
         if modification:
             for mod in modification:
@@ -190,7 +193,7 @@ class Good(BaseModel):
         return name
 
     @staticmethod
-    def _get_capacity(cap: float = None, modification: Dict = None) -> float:
+    def _get_capacity(cap: float = None, modification: List[Modification] = None) -> float:
         """Метод возвращает объем продукции."""
         # Модификации в сервисе не имеют аттрибут объем, но название модификации будет иметь вид
         # Alaska - Нигилист (Lager - IPL (India Pale Lager). OG 16%, ABV 6,8%, IBU 60) (Название модификации)
@@ -199,7 +202,7 @@ class Good(BaseModel):
         if cap is not None:
             return cap
 
-        if modification[0].name == "Тара":
+        if modification is not None and modification[0].name == "Тара":
             for _capacity in _MODIFICATION_SET:
                 if _capacity == modification[0].value:
                     capacity = float(_MODIFICATION_SET[_capacity])
@@ -303,15 +306,15 @@ class Good(BaseModel):
         """Метод возвращает тип продукта пиво, сидр, комбуча, вырезанной из строки add_info."""
         bev_type: GoodType = GoodType.OTHER
         if add_info != "":
-            if ''.join(GoodType.CIDER.value) in add_info.lower():
+            if "".join(GoodType.CIDER.value) in add_info.lower():
                 bev_type = GoodType.CIDER
-            elif ''.join(GoodType.MEAD.value) in add_info.lower():
+            elif "".join(GoodType.MEAD.value) in add_info.lower():
                 bev_type = GoodType.MEAD
-            elif ''.join(GoodType.KOMBUCHA.value) in add_info.lower():
+            elif "".join(GoodType.KOMBUCHA.value) in add_info.lower():
                 bev_type = GoodType.KOMBUCHA
             else:
                 bev_type = GoodType.BEER
-        return ''.join(bev_type.value)
+        return "".join(bev_type.value)
 
 
 @dataclass()

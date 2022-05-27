@@ -1,7 +1,6 @@
-""" В модуле хранятся url'ы для сервиса Конутр.Маркет https://market.kontur.ru/."""
+"""В модуле хранятся url'ы для сервиса Конутр.Маркет https://market.kontur.ru/."""
 from enum import Enum
-from typing import Dict
-from typing import NamedTuple
+from typing import Dict, NamedTuple
 
 AUTH_URL = "https://auth.kontur.ru/api/authentication/password/auth-by-password"
 EGAIS_ASSORTMENT_URL = (
@@ -12,8 +11,9 @@ EGAIS_ASSORTMENT_URL = (
 
 class UrlType(Enum):
     """Перечисление для определения, какой тип url необходимо сформировать.
+
     login - авторизация пользователя.
-    egais_assortment - справочник товарв (ЕГАИС наименований)
+    egais_assortment - справочник товаров (ЕГАИС наименований)
     """
 
     LOGIN = 1
@@ -37,11 +37,11 @@ class KonturMarketUrl(NamedTuple):
 
 def get_url(url_type: UrlType) -> KonturMarketUrl:
     """Метод для получения url.
+
     :param url_type: UrlType.login - url для авторизации в сервисе, UrlType.egais_assortment - url для списка ЕГАИС
     наименований.
     :returns: Возвращается объект Url
     """
-
     url: KonturMarketUrl
 
     if url_type == UrlType.LOGIN:

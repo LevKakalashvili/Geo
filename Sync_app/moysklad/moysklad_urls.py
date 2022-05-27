@@ -3,7 +3,7 @@
 import base64
 from datetime import datetime
 from enum import Enum
-from typing import Dict, Any, NamedTuple
+from typing import Any, Dict, NamedTuple
 from urllib.parse import urljoin
 
 import Sync_app.privatedata.moysklad_privatedata as ms_pvdata
@@ -11,9 +11,7 @@ import Sync_app.privatedata.moysklad_privatedata as ms_pvdata
 JSON_URL = "https://online.moysklad.ru/api/remap/1.2/"  # ссылка для подключения к МС по JSON API 1.2
 BEER_FOLDER_ID = "8352f575-b4c1-11e7-7a34-5acf0009a77f"  # id папки "Пиво"
 GEO_ORG_ID = "0a405989-b28a-11e7-7a31-d0fd00338283"  # id юр. лица "География"
-GEO_ORG_HREF = (
-    JSON_URL + "entity/organization/" + GEO_ORG_ID
-)  # Ссылка на юр. лицо "География"
+GEO_ORG_HREF = JSON_URL + "entity/organization/" + GEO_ORG_ID  # Ссылка на юр. лицо "География"
 GEO_SHOP_ID = "5057e2b5-b498-11e7-7a34-5acf0002684b"  # d розничной точки "География"
 GEO_SHOP_HREF = JSON_URL + "entity/retailstore/" + GEO_SHOP_ID
 
@@ -54,7 +52,9 @@ def get_headers(token: str = "") -> Dict[str, Any]:
         }
     else:
         pvd = f"{ms_pvdata.USER}:{ms_pvdata.PASSWORD}".encode()
-        headers = dict(Authorization=f"Basic{base64.b64encode(pvd)}")
+        headers = {
+            'Authorization': f"Basic{base64.b64encode(pvd)}"
+        }
     return headers
 
 
@@ -79,7 +79,7 @@ def get_url(
     :rtypes: Url
     """
     url = MoySkladUrl("", {})
-
+    request_filter: dict[str, Any] = {}
     # если нужен url для запроса токен
     if _type == UrlType.TOKEN:
         # формируем url для запроса токена
@@ -98,7 +98,7 @@ def get_url(
         # Т.к. в запрашиваемом периоде может оказаться продаж больше, чем 100, а МойСклад отдает только страницами
         # по 100 продаж за ответ, чтобы получить следующую страницу, нежно формировать новый запрос со смещением
         # offset=200, следующий offset-300 и т.д. В данной реализации это не учтено, т.к. больше 100 продаж не выявлено
-        request_filter: dict[str, Any] = {
+        request_filter = {
             "filter": [
                 f"organization={JSON_URL}entity/organization/{GEO_ORG_ID}",
                 f"assortment={JSON_URL}entity/productfolder/{BEER_FOLDER_ID}",
@@ -112,10 +112,8 @@ def get_url(
         url = MoySkladUrl(urljoin(JSON_URL, "entity/retaildemand"), request_filter)
     # # если нужен url для запроса ассортимента
     elif _type == UrlType.ASSORTMENT:
-        request_filter: dict[str, Any] = {
-            "filter": [
-                f"productFolder={JSON_URL}entity/productfolder/{BEER_FOLDER_ID}"
-            ],
+        request_filter = {
+            "filter": [f"productFolder={JSON_URL}entity/productfolder/{BEER_FOLDER_ID}"],
             "offset": offset,
         }
         url = MoySkladUrl(urljoin(JSON_URL, "entity/assortment"), request_filter)

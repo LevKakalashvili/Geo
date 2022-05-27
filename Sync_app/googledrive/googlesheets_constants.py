@@ -1,6 +1,4 @@
-""" В модуле хранятся данные для доступа к Google API.
-
-"""
+"""В модуле хранятся данные для доступа к Google API."""
 # сервисный аккаунт google account@moyskald-sync.iam.gserviceaccount.com для работы по API
 
 # Файл, полученный в Google Developer Console
@@ -9,13 +7,9 @@ SPREEDSHEETS_URL = "https://www.googleapis.com/auth/spreadsheets"
 GDRIVE_URL = "https://www.googleapis.com/auth/drive"
 
 # ID Google Sheets документа (можно взять из его URL)
-SPREEDSHEET_ID_GOODS_AVAILABILITY = (
-    "1Sa4MSpj04288-UScp2t8_5vpZgSYmLrauf-OD3i-8O0"  # таблица "Наличие"
-)
+SPREEDSHEET_ID_GOODS_AVAILABILITY = "1Sa4MSpj04288-UScp2t8_5vpZgSYmLrauf-OD3i-8O0"  # таблица "Наличие"
 LIST_ID_GOODS_AVAILABILITY = "96547513"  # лист "Остаток" в таблице "Наличие"
-LIST_NAME_GOODS_AVAILABILITY = (
-    "Актуальное наличие"  # лист "Остаток" в таблице "Наличие"
-)
+LIST_NAME_GOODS_AVAILABILITY = "Актуальное наличие"  # лист "Остаток" в таблице "Наличие"
 FIRST_CELL_GOODS_AVAILABILITY = "A2"  # первая ячейка с данными в таблице "Наличие"
 LAST_COLUMN_GOODS_AVAILABILITY = "G"  # последний столбец с данными в таблице "Наличие"
 
