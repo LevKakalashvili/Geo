@@ -3,7 +3,7 @@ from typing import List
 
 from django.db import models
 
-from Sync_app.konturmarket.konturmarket_class_lib import StockEGAIS
+import Sync_app.konturmarket.konturmarket_class_lib as km_class
 
 
 class KonturMarketDBProducer(models.Model):
@@ -79,12 +79,12 @@ class KonturMarketDBGood(models.Model):
     )
 
     @staticmethod
-    def save_objects_to_db(list_km_goods: List[StockEGAIS]) -> None:
+    def save_objects_to_db(list_km_goods: List[km_class.StockEGAIS]) -> None:
         """Метод сохранения данных о товарах в БД."""
         if not list_km_goods:
             return
 
-        km_good: StockEGAIS
+        km_good: km_class.StockEGAIS
         for km_good in list_km_goods:
             producer = KonturMarketDBProducer(
                 fsrar=km_good.good.brewery.fsrar_id,

@@ -4,9 +4,9 @@ from typing import List
 from django.db import models
 from django.db.models import CheckConstraint, Q
 
-from Sync_app.models.konturmarket_models import KonturMarketDBGood
-from Sync_app.moysklad.moysklad_class_lib import Good as MoySkladGood
-from Sync_app.moysklad.moysklad_constants import GoodType
+import Sync_app.models.konturmarket_models as km_model
+import Sync_app.moysklad.moysklad_class_lib as ms_class
+import Sync_app.moysklad.moysklad_constants as ms_const
 
 
 class MoySkladDBGood(models.Model):
@@ -34,7 +34,7 @@ class MoySkladDBGood(models.Model):
         ]
 
         constraints = [
-            CheckConstraint(check=Q(type__in=["".join(element.value) for element in GoodType]), name="valid_good_type")
+            CheckConstraint(check=Q(type__in=["".join(element.value) for element in ms_const.GoodType]), name="valid_good_type")
         ]
 
     # UUID товара
@@ -75,19 +75,17 @@ class MoySkladDBGood(models.Model):
     # Тип продукта (пиво, сидр, медовуха, комбуча, лимонад)
     bev_type = models.CharField(
         max_length=8,
-        choices=[("".join(element.value), "".join(element.value)) for element in GoodType],
+        choices=[("".join(element.value), "".join(element.value)) for element in ms_const.GoodType],
         help_text="Тип продукта",
         db_column="type",
     )
     # Емкость тары
     capacity = models.DecimalField(max_digits=5, decimal_places=3, help_text="Емкость тары")
     # Код ЕГАИС
-    egais_code = models.ManyToManyField(KonturMarketDBGood, help_text="Код алкогольной продукции")
-
-
+    egais_code = models.ManyToManyField(km_model.KonturMarketDBGood, help_text="Код алкогольной продукции")
 
     @staticmethod
-    def save_objects_to_db(list_ms_goods: List[MoySkladGood]) -> None:
+    def save_objects_to_db(list_ms_goods: List[ms_class.Good]) -> bool:
         """Метод сохраняет объекты, созданные на основе списка list_ms_goods в БД."""
         for ms_good in list_ms_goods:
             # Если текущий товар - не комплект из товаров
@@ -113,14 +111,10 @@ class MoySkladDBGood(models.Model):
                 ibu=parsed_name.ibu,
                 is_alco=parsed_name.is_alco,
                 is_draft=parsed_name.is_draft,
-                type=parsed_name.type,
+                type=parsed_name.bev_type,
                 style=parsed_name.style,
                 capacity=parsed_name.capacity,
             )
-            try:
-                good.save()
-            except Exception:
-                a = 1
             # Заполняем остатки
             stocks = MoySkladDBStock(
                 uuid=good,
@@ -128,6 +122,7 @@ class MoySkladDBGood(models.Model):
                 quantity=ms_good.quantity if ms_good.quantity >= 0 else 0,
             )
             stocks.save()
+        return True
 
 
 class MoySkladDBStock(models.Model):
