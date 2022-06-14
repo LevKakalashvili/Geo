@@ -1,3 +1,4 @@
+"""Константы для работы с сервисом МойСклад."""
 from enum import Enum
 from typing import Dict, Tuple
 
@@ -5,7 +6,7 @@ _TRASH: Tuple[str, ...] = (
     " (0,75)",
     " (0,33)",
     " Бутылка 0,75",
-    " ж\б",
+    " ж\\б",
     " (ж/б)",
     " (0,5)",
 )
@@ -23,12 +24,14 @@ _MODIFICATION_SET: Dict[str, float] = {
 
 
 class GoodType(Enum):
-    BEER = 'beer',
-    CIDER = 'cider',
-    KOMBUCHA = 'kombucha',
-    LEMONADE = 'lemonade',
-    MEAD = 'mead',
-    OTHER = 'other'
+    """Перечисление типов товаров."""
+
+    BEER = ("beer",)
+    CIDER = ("cider",)
+    KOMBUCHA = ("kombucha",)
+    LEMONADE = ("lemonade",)
+    MEAD = ("mead",)
+    OTHER = ("other",)
 
 
 class AlcoType(Enum):

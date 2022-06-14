@@ -1,7 +1,8 @@
 """Модуль вспомогательных функций для работы с БД."""
 
 from Sync_app.googledrive.googledrive_class_lib import CompilanceRow
-from Sync_app.models import KonturMarketDBGood, MoySkladDBGood
+import Sync_app.models.moysklad_models as ms_model
+import Sync_app.models.konturmarket_models as km_model
 
 
 def db_set_matches(googlesheets_copm_table: list[list[str]]) -> list[list[str]]:
@@ -19,7 +20,7 @@ def db_set_matches(googlesheets_copm_table: list[list[str]]) -> list[list[str]]:
     not_proceeded_good = []
     # TODO: разобраться с QuerySet
     # ms_db_good: QuerySet
-    km_db_good: KonturMarketDBGood
+    km_db_good: km_model.KonturMarketDBGood
 
     for gs_row in googlesheets_copm_table:
         # Если в таблице соответствия из googlesheets, не установлено соответствие - второй элемент gs_good[1]
@@ -28,7 +29,7 @@ def db_set_matches(googlesheets_copm_table: list[list[str]]) -> list[list[str]]:
             gs_good = CompilanceRow(commercial_name=gs_row[0], egais_code=gs_row[1])
 
             # В googlesheets указывается только фасованная продукция и не указывается разливное пиво
-            km_db_good = KonturMarketDBGood.objects.get(egais_code=gs_good[1])
+            km_db_good = km_model.onturMarketDBGood.objects.get(egais_code=gs_good[1])
 
             # В таблице из googlesheets будут встречаться записи 2ух видов. В нулевом элементе good[0] может быть:
             # 1. 4Пивовара - Вброс, Бакунин - How Much Is Too Much [Raspberry],
@@ -37,7 +38,7 @@ def db_set_matches(googlesheets_copm_table: list[list[str]]) -> list[list[str]]:
             # 2.1 Barista Chocolate Quad
 
             # Вариант 2:
-            ms_db_good = MoySkladDBGood.objects.filter(name=gs_good.name).filter(is_draft=False)
+            ms_db_good = ms_model.MoySkladDBGood.objects.filter(name=gs_good.name).filter(is_draft=False)
             if gs_good.brewery:
                 # Вариант 1:
                 ms_db_good = ms_db_good.filter(brewery=gs_good.brewery)
@@ -50,13 +51,6 @@ def db_set_matches(googlesheets_copm_table: list[list[str]]) -> list[list[str]]:
             elif len(ms_db_good) >= 2:
                 # Фильтруем по объему
                 ms_db_good = [good for good in ms_db_good if good.capacity == km_db_good.capacity]
-                # ms_db_good = list(
-                #     filter(
-                #         lambda element: element.capacity.capacity
-                #         == km_db_good.capacity.capacity,
-                #         ms_db_good,
-                #     )
-                # )
 
                 # Если опять нашлось более одного товара, исключаем запись из обработки
                 if len(ms_db_good):

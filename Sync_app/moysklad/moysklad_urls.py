@@ -1,9 +1,9 @@
 """В модуле хранятся url'ы и функции, для доступа в сервис MoySklad https://www.moysklad.ru/ по API."""
 
 import base64
-from datetime import datetime
+from datetime import date
 from enum import Enum
-from typing import Any, Dict, NamedTuple
+from typing import Any, Dict, NamedTuple, Optional
 from urllib.parse import urljoin
 
 import Sync_app.privatedata.moysklad_privatedata as ms_pvdata
@@ -51,27 +51,25 @@ def get_headers(token: str = "") -> Dict[str, Any]:
             "Authorization": "Bearer " + token,
         }
     else:
-        pvd = f"{ms_pvdata.USER}:{ms_pvdata.PASSWORD}".encode()
-        headers = {
-            'Authorization': f"Basic{base64.b64encode(pvd)}"
-        }
+        credentials = f"{ms_pvdata.USER}:{ms_pvdata.PASSWORD}"
+        headers = {"Authorization": f"Basic {base64.b64encode(credentials.encode()).decode('utf-8')}"}
     return headers
 
 
 def get_url(
     _type: UrlType,
-    start_period: datetime = datetime.today(),
-    end_period: datetime = None,
-    offset: int = 0,
+    start_period: Optional[date],
+    end_period: Optional[date],
+    offset: int,
 ) -> MoySkladUrl:
     """Функция для получения url.
 
-    :param _type: UrlType.token - url для получения токена, UrlType.retail_demand - url для получения розничны
+    :param _type: UrlType.token - url для получения токена, UrlType.retail_demand - url для получения розничных
     продаж за определённый период, UrlType.assortment - url для получения ассортимента товаров
     :param start_period: начало периода продаж
-    :type start_period: datetime.datetime
+    :type start_period: datetime.date. Если не указан, берется текущий день
     :param end_period: конец периода продаж. Если не указан, считается как start_period 23:59
-    :type start_period: datetime.datetime
+    :type start_period: datetime.date
     :param offset: смещение для запроса списка товаров
     :type offset: int
 
@@ -88,6 +86,8 @@ def get_url(
     # если нужен url для запроса продаж
     elif _type == UrlType.RETAIL_DEMAND:
         # если конец периода не указан входным параметром, считаем, что запросили продажи за вчера
+        if start_period is None:
+            start_period = date.today()
         if end_period is None:
             end_period = start_period
 

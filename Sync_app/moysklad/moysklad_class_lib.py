@@ -1,4 +1,5 @@
 """В модуле хранятся описание классов."""
+import datetime
 import re
 from dataclasses import dataclass
 from typing import Any, Dict, List, NamedTuple, Optional, Union
@@ -7,6 +8,7 @@ import requests
 from pydantic import BaseModel, Field
 
 import Sync_app.moysklad.moysklad_urls as ms_urls
+import Sync_app.models.moysklad_models as ms_model
 import Sync_app.privatedata.moysklad_privatedata as ms_pvdata
 from Sync_app.moysklad.moysklad_constants import (
     _MODIFICATION_SET, _TRASH, Characteristics, GoodType,
@@ -35,9 +37,7 @@ class GoodTuple(NamedTuple):
     ibu: int = 0
     is_alco: bool = False
     is_draft: bool = False
-    # is_cider: bool = False
-    # is_beer: bool = False
-    type: GoodType = GoodType.OTHER
+    bev_type: str = "".join(GoodType.OTHER.value)
     capacity: float = 0.0
 
 
@@ -110,52 +110,6 @@ class Good(BaseModel):
             # https://online.moysklad.ru/app/#good/edit?id=09f5f652-269e-11ec-0a80-02c5000e4cc9
             return self.parent_good_href.meta.uuidhref.split("?id=")[1]
         return ""
-
-    def parse_object(self) -> GoodTuple:
-        """Метод возвращает объект типа GoodTuple."""
-        if not self:
-            return GoodTuple()
-
-        good = self._parse_object()
-
-        return good
-
-    def _parse_object(self) -> GoodTuple:
-        if self.name:
-            full_name = self._remove_modification_from_name(name=self.name, modification=self.modifications)
-            full_name = self._remove_trash_from_string(full_name)
-
-            additional_info = self._get_additional_info(f_name=full_name)
-            bev_type = self._get_good_type(additional_info)
-
-            style = self._get_style(additional_info)
-            abv = self._get_characteristics(type_=Characteristics.ABV, add_info=additional_info)
-            is_alco = True if abv > 1 else False
-            og = self._get_characteristics(type_=Characteristics.OG, add_info=additional_info)
-            ibu = self._get_characteristics(type_=Characteristics.IBU, add_info=additional_info)
-            brewery = self._get_brewery(
-                f_name=full_name,
-                add_info=additional_info,
-                parent_path=self.path_name if self.path_name else "",
-            )
-            name = self._get_name(f_name=full_name, add_info=additional_info, brewery=brewery)
-
-            is_draft = self._is_draft(attr=self.attributes)
-            capacity = self._get_capacity(cap=dict(self).get("volume"), modification=self.modifications)
-
-            return GoodTuple(
-                brewery=brewery,
-                name=name,
-                style=style,
-                og=og,
-                abv=abv,
-                ibu=int(ibu),
-                is_alco=is_alco,
-                type=bev_type,
-                is_draft=is_draft,
-                capacity=capacity,
-            )
-        return GoodTuple()
 
     @staticmethod
     def _is_draft(attr: List[Attributes] = None) -> bool:
@@ -243,8 +197,7 @@ class Good(BaseModel):
 
     @staticmethod
     def _get_characteristics(type_: Characteristics, add_info: str = "") -> float:
-        """Метод возвращает число - количественный параметр, выбранный из параметра add_info в зависимости от
-        переданного параметра type_.
+        """Метод возвращает число - количественный параметр, выбранный из параметра add_info в зависимости от переданного параметра type_.
 
         Например:
         type_ = ABV
@@ -302,7 +255,7 @@ class Good(BaseModel):
         return name
 
     @staticmethod
-    def _get_good_type(add_info: str = "") -> GoodType:
+    def _get_good_type(add_info: str = "") -> str:
         """Метод возвращает тип продукта пиво, сидр, комбуча, вырезанной из строки add_info."""
         bev_type: GoodType = GoodType.OTHER
         if add_info != "":
@@ -316,20 +269,63 @@ class Good(BaseModel):
                 bev_type = GoodType.BEER
         return "".join(bev_type.value)
 
+    def parse_object(self) -> GoodTuple:
+        """Метод возвращает объект типа GoodTuple."""
+        if not self:
+            return GoodTuple()
+
+        good = self._parse_object()
+
+        return good
+
+    def _parse_object(self) -> GoodTuple:
+        if self.name:
+            full_name = self._remove_modification_from_name(name=self.name, modification=self.modifications)
+            full_name = self._remove_trash_from_string(full_name)
+
+            additional_info = self._get_additional_info(f_name=full_name)
+            bev_type = self._get_good_type(additional_info)
+
+            style = self._get_style(additional_info)
+            abv = self._get_characteristics(type_=Characteristics.ABV, add_info=additional_info)
+            is_alco = True if abv > 1 else False
+            og = self._get_characteristics(type_=Characteristics.OG, add_info=additional_info)
+            ibu = self._get_characteristics(type_=Characteristics.IBU, add_info=additional_info)
+            brewery = self._get_brewery(
+                f_name=full_name,
+                add_info=additional_info,
+                parent_path=self.path_name if self.path_name else "",
+            )
+            name = self._get_name(f_name=full_name, add_info=additional_info, brewery=brewery)
+
+            is_draft = self._is_draft(attr=self.attributes)
+            capacity = self._get_capacity(cap=dict(self).get("volume"), modification=self.modifications)
+
+            return GoodTuple(
+                brewery=brewery,
+                name=name,
+                style=style,
+                og=og,
+                abv=abv,
+                ibu=int(ibu),
+                is_alco=is_alco,
+                bev_type=bev_type,
+                is_draft=is_draft,
+                capacity=capacity,
+            )
+        return GoodTuple()
+
 
 @dataclass()
 class MoySklad:
-    """Класс описывает работу с сервисом МойСклад по
-    JSON API 1.2 https://dev.moysklad.ru/doc/api/remap/1.2/#mojsklad-json-api."""
+    """Класс описывает работу с сервисом МойСклад по JSON API 1.2 https://dev.moysklad.ru/doc/api/remap/1.2/#mojsklad-json-api."""
 
     # токен для работы с сервисом
     # https://dev.moysklad.ru/doc/api/remap/1.2/#mojsklad-json-api-obschie-swedeniq-autentifikaciq
     _token: str = ""
 
     def set_token(self, request_new: bool = True) -> bool:
-        """Получение токена для доступа и работы с МС по JSON API 1.2. При успешном ответе возвращаем True,
-        в случае ошибок False.
-        https://dev.moysklad.ru/doc/api/remap/1.2/#mojsklad-json-api-obschie-swedeniq-autentifikaciq.
+        """Получение токена для доступа и работы с МС по JSON API 1.2. При успешном ответе возвращаем True, в случае ошибок False.
 
         :param request_new: True, каждый раз будет запрашиваться новый токен,
             если False будет браться из moysklad_privatedata.py
@@ -337,7 +333,9 @@ class MoySklad:
         # если необходимо запросить новый токен у сервиса
         if request_new:
             # Получаем url запроса
-            url: ms_urls.MoySkladUrl = ms_urls.get_url(ms_urls.UrlType.TOKEN)
+            url: ms_urls.MoySkladUrl = ms_urls.get_url(
+                ms_urls.UrlType.TOKEN, start_period=datetime.date.today(), end_period=None, offset=0,
+            )
             # Получаем заголовок запроса
             header: Dict[str, Any] = ms_urls.get_headers(self._token)
 
@@ -365,17 +363,19 @@ class MoySklad:
         header: Dict[str, Any] = ms_urls.get_headers(self._token)
 
         need_request: bool = True
-        goods: List[Good] = []
+        goods: List[Dict[str, Any]] = []
 
         while need_request:
             # Получаем url для отправки запроса в сервис
-            url: ms_urls.MoySkladUrl = ms_urls.get_url(ms_urls.UrlType.ASSORTMENT, offset=counter * 1000)
+            url: ms_urls.MoySkladUrl = ms_urls.get_url(
+                ms_urls.UrlType.ASSORTMENT, start_period=None, end_period=None, offset=counter * 1000,
+            )
 
             response = requests.get(url.url, url.request_filter, headers=header)
             if not response.ok:
                 return []
 
-            rows: List[Any] = response.json().get("rows")
+            rows: List[Dict[str, Any]] = response.json().get("rows")
             # Проверяем получили ли в ответе не пустой список товаров из
             # ассортимента
             if len(rows) == 1000:
@@ -388,3 +388,16 @@ class MoySklad:
             goods.extend(rows)
 
         return [Good(**good) for good in goods]
+
+    def sync_assortment(self) -> bool:
+        """Метод запускает передачу ассортимента из сервиса МойСклад в БД."""
+
+        # Получаем токен для работы с сервисом МойСклад
+        if not self.set_token(request_new=True):
+            return False
+
+        # Получаем ассортимент из МойСклад
+        ms_goods = self.get_assortment()
+        # Обновляем БД объектами ассортимента МойСклад
+        if ms_goods:
+            return ms_model.MoySkladDBGood.save_objects_to_db(list_ms_goods=ms_goods)
