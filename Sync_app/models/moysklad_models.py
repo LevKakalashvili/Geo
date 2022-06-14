@@ -1,12 +1,15 @@
 """Модуль содержит описание моделей для работы с МойСклад."""
-from typing import List
+from typing import List, TYPE_CHECKING
 
 from django.db import models
 from django.db.models import CheckConstraint, Q
 
 import Sync_app.models.konturmarket_models as km_model
-import Sync_app.moysklad.moysklad_class_lib as ms_class
+# import Sync_app.moysklad.moysklad_class_lib as ms_class
 import Sync_app.moysklad.moysklad_constants as ms_const
+
+if TYPE_CHECKING:
+    import Sync_app.moysklad.moysklad_class_lib as ms_class
 
 
 class MoySkladDBGood(models.Model):
@@ -85,7 +88,7 @@ class MoySkladDBGood(models.Model):
     egais_code = models.ManyToManyField(km_model.KonturMarketDBGood, help_text="Код алкогольной продукции")
 
     @staticmethod
-    def save_objects_to_db(list_ms_goods: List[ms_class.Good]) -> bool:
+    def save_objects_to_db(list_ms_goods: List['ms_class.Good']) -> bool:
         """Метод сохраняет объекты, созданные на основе списка list_ms_goods в БД."""
         for ms_good in list_ms_goods:
             # Если текущий товар - не комплект из товаров

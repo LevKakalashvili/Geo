@@ -1,9 +1,11 @@
 """Команда запуска синхронизации с МойСклад, КонтурМаркет, GoogleSheets."""
 from django.core.management.base import BaseCommand
-from typing import TYPE_CHECKING
+import Sync_app.moysklad.moysklad_class_lib as ms_class
 
-if TYPE_CHECKING:
-    import Sync_app.moysklad.moysklad_class_lib as ms_class
+# from typing import TYPE_CHECKING
+#
+# if TYPE_CHECKING:
+#     import Sync_app.moysklad.moysklad_class_lib as ms_class
 
 
 class Command(BaseCommand):
