@@ -88,7 +88,7 @@ on comp_table.moyskladdbgood_id = sam.uuid
 left join geo.sync_app_konturmarketdbgood sak
 on sak.egais_code = comp_table.konturmarketdbgood_id;
 
--- Таблица соотвествия (показать только привязанные товары)
+-- Таблица соответствия (показать только привязанные товары)
 select 
 	sam.brewery,
 	sam.name,
