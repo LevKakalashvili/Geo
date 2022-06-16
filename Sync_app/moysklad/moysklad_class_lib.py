@@ -390,7 +390,7 @@ class MoySklad:
         return [Good(**good) for good in goods]
 
     def sync_assortment(self) -> bool:
-        """Метод запускает передачу ассортимента из сервиса МойСклад в БД."""
+        """Метод заполняет БД товарами из сервиса МойСклад."""
 
         # Получаем токен для работы с сервисом МойСклад
         if not self.set_token(request_new=True):
