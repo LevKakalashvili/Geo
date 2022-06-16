@@ -8,11 +8,13 @@ import httplib2
 from oauth2client.service_account import ServiceAccountCredentials
 
 import Sync_app.googledrive.googlesheets_constants as gs_const
+import Sync_app.models.konturmarket_models as km_model
+import Sync_app.models.moysklad_models as ms_model
 from Sync_app.common.functions import string_title
 
 
 class CompilanceRow(NamedTuple):
-    """Вспомогательный класс для хранения записи из таблицы соответствия, описанной в googlesheets."""  # pylint: disable=line-too-long
+    """Вспомогательный класс для хранения записи из таблицы соответствия, описанной в googlesheets."""
 
     commercial_name: str
     egais_code: str
@@ -44,6 +46,71 @@ class GoogleSheets:
     service: Any = None
     # Переменная устанавливается в True, в случае успешного логина в сервисе.
     connection_ok: bool = False
+
+    @staticmethod
+    def db_set_matches(googlesheets_copm_table: list[list[str]]) -> list[list[str]]:
+        """Функция устанавливает соответствия между товарами в таблице БД moyskladdbgood и таблицей БД konturmarketdbgood.
+
+        Связи устанавливаются на основе таблицы "Соответствия" в googlesheets, передаваемой
+        параметром googlesheets_copm_table.
+        :param googlesheets_copm_table: Список вида:
+        ['Коммерческое название', 'Код алкогольной продукции'].
+        :return: Возвращает список наименований для которых не удалось сделать запись в БД.
+        """
+        if not googlesheets_copm_table:
+            return []
+
+        not_proceeded_good = []
+        # TODO: разобраться с QuerySet
+        # ms_db_good: QuerySet
+        km_db_good: km_model.KonturMarketDBGood
+
+        for gs_row in googlesheets_copm_table:
+            # Если в таблице соответствия из googlesheets, не установлено соответствие - второй элемент gs_good[1]
+            # будет пустой, то пропускаем строку.
+            if len(gs_row) > 1:
+                gs_good = CompilanceRow(commercial_name=gs_row[0], egais_code=gs_row[1])
+
+                # В googlesheets указывается только фасованная продукция и не указывается разливное пиво
+                km_db_good = km_model.KonturMarketDBGood.objects.get(egais_code=gs_good[1])
+
+                # В таблице из googlesheets будут встречаться записи 2ух видов. В нулевом элементе good[0] может быть:
+                # 1. 4Пивовара - Вброс, Бакунин - How Much Is Too Much [Raspberry],
+                # 1.1 Степь и Ветер - Smoothie Mead: Raspberry, Black Currant, Mint
+                # 2. Barbe Ruby
+                # 2.1 Barista Chocolate Quad
+
+                # Вариант 2:
+                ms_db_good = ms_model.MoySkladDBGood.objects.filter(name=gs_good.name).filter(is_draft=False)
+                if gs_good.brewery:
+                    # Вариант 1:
+                    ms_db_good = ms_db_good.filter(brewery=gs_good.brewery)
+
+                # Если не нашли товар в таблице МойСклад
+                if len(ms_db_good) == 0:
+                    not_proceeded_good.append(gs_row)
+
+                # Если в выборке из таблицы товаров для МойСклад нашлось товаров больше одного
+                elif len(ms_db_good) >= 2:
+                    # Фильтруем по объему
+                    ms_db_good = [good for good in ms_db_good if good.capacity == km_db_good.capacity]
+
+                    # Если опять нашлось более одного товара, исключаем запись из обработки
+                    if len(ms_db_good):
+                        # Если нашлись совпадения
+                        for element in ms_db_good:
+                            element.egais_code.add(km_db_good)
+                    else:
+                        # Исключаем запись из обработки
+                        not_proceeded_good.append(gs_row)
+                # Если товар найден
+                else:
+                    # Добавляем связь между товарами МойСклад и товарами из ЕГАИС
+                    ms_db_good.first().egais_code.add(km_db_good)
+            else:
+                not_proceeded_good.append(gs_row)
+
+        return not_proceeded_good
 
     def get_access(self) -> bool:
         """Метод получения доступа сервисного объекта Google API.
@@ -114,7 +181,9 @@ class GoogleSheets:
         # В начале очищаем диапазон.
         # https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets.values/clear?hl=ru
         self.service.spreadsheets().values().clear(
-            spreadsheetId=spreadsheets_id, range=f"{list_name}!{list_range}", body={},
+            spreadsheetId=spreadsheets_id,
+            range=f"{list_name}!{list_range}",
+            body={},
         ).execute()
         # Записываем данные
         self.service.spreadsheets().values().batchUpdate(
@@ -130,4 +199,20 @@ class GoogleSheets:
                 ],
             },
         ).execute()
+        return True
+
+    def sync_compl_table(self) -> bool:
+        """Метод заполняет таблицу соответствия."""
+        if not self.get_access():
+            return False
+
+        compl_table: List[List[str]] = self.get_data(
+            spreadsheets_id=gs_const.SPREEDSHEET_ID_EGAIS,
+            list_name=gs_const.LIST_NAME_EGAIS,
+            list_range=f"{gs_const.FIRST_CELL_EGAIS}:{gs_const.LAST_COLUMN_EGAIS}",
+        )
+        # Оставляем только коммерческое название и код алкогольной продукции
+        compl_table = [i[: len(i) : 2] for i in compl_table]  # noqa
+        self.db_set_matches(googlesheets_copm_table=compl_table)
+
         return True
