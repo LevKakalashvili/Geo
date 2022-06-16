@@ -1,11 +1,11 @@
 """Модуль содержит описание моделей для работы с МойСклад."""
-from typing import List, TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 from django.db import models
 from django.db.models import CheckConstraint, Q
+from django.db.utils import IntegrityError
 
 import Sync_app.models.konturmarket_models as km_model
-# import Sync_app.moysklad.moysklad_class_lib as ms_class
 import Sync_app.moysklad.moysklad_constants as ms_const
 
 if TYPE_CHECKING:
@@ -22,22 +22,24 @@ class MoySkladDBGood(models.Model):
             models.Index(
                 fields=[
                     "full_name",
-                ]
+                ],
             ),
             models.Index(
                 fields=[
                     "brewery",
-                ]
+                ],
             ),
             models.Index(
                 fields=[
                     "name",
-                ]
+                ],
             ),
         ]
 
         constraints = [
-            CheckConstraint(check=Q(type__in=["".join(element.value) for element in ms_const.GoodType]), name="valid_good_type")
+            CheckConstraint(
+                check=Q(bev_type__in=["".join(element.value) for element in ms_const.GoodType]), name="valid_good_type",
+            ),
         ]
 
     # UUID товара
@@ -80,7 +82,6 @@ class MoySkladDBGood(models.Model):
         max_length=8,
         choices=[("".join(element.value), "".join(element.value)) for element in ms_const.GoodType],
         help_text="Тип продукта",
-        db_column="type",
     )
     # Емкость тары
     capacity = models.DecimalField(max_digits=5, decimal_places=3, help_text="Емкость тары")
@@ -88,7 +89,7 @@ class MoySkladDBGood(models.Model):
     egais_code = models.ManyToManyField(km_model.KonturMarketDBGood, help_text="Код алкогольной продукции")
 
     @staticmethod
-    def save_objects_to_db(list_ms_goods: List['ms_class.Good']) -> bool:
+    def save_objects_to_db(list_ms_goods: List["ms_class.Good"]) -> bool:
         """Метод сохраняет объекты, созданные на основе списка list_ms_goods в БД."""
         for ms_good in list_ms_goods:
             # Если текущий товар - не комплект из товаров
@@ -114,17 +115,24 @@ class MoySkladDBGood(models.Model):
                 ibu=parsed_name.ibu,
                 is_alco=parsed_name.is_alco,
                 is_draft=parsed_name.is_draft,
-                type=parsed_name.bev_type,
+                bev_type=parsed_name.bev_type,
                 style=parsed_name.style,
                 capacity=parsed_name.capacity,
             )
-            # Заполняем остатки
+
             stocks = MoySkladDBStock(
                 uuid=good,
                 # Если по какой-то причине остаток товара в МойСклад отрицательный в БД сохраняем 0
                 quantity=ms_good.quantity if ms_good.quantity >= 0 else 0,
             )
-            stocks.save()
+            # Сохраняем товары в таблицу
+            # Сохраняем остатки в таблицу
+            try:
+                good.save()
+                stocks.save()
+            except IntegrityError as error:
+                # TODO: переделать на логгер
+                print(f"\nWARNING! {error.args[1]}")
         return True
 
 
