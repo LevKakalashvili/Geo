@@ -1,9 +1,10 @@
 """Модуль содержит описание моделей для работы с сервисом Контур.Маркет."""
-from typing import List
+from typing import TYPE_CHECKING, List
 
 from django.db import models
 
-import Sync_app.konturmarket.konturmarket_class_lib as km_class
+if TYPE_CHECKING:
+    import Sync_app.konturmarket.konturmarket_class_lib as km_class
 
 
 class KonturMarketDBProducer(models.Model):
@@ -19,11 +20,13 @@ class KonturMarketDBProducer(models.Model):
     inn = models.CharField(max_length=12, help_text="ИНН производителя", null=True)
 
     short_name = models.CharField(
-        max_length=200, help_text="Короткое наименование производителя",
+        max_length=200,
+        help_text="Короткое наименование производителя",
     )
 
     full_name = models.CharField(
-        max_length=255, help_text="Полное наименование производителя",
+        max_length=255,
+        help_text="Полное наименование производителя",
     )
 
 
@@ -54,7 +57,8 @@ class KonturMarketDBGood(models.Model):
     # 2. разные импортеры, дилеры могут поставить разные кода АП
     # поэтому уникальность поля не требуется
     full_name = models.CharField(
-        max_length=200, help_text="Полное ЕГАИС наименование товара",
+        max_length=200,
+        help_text="Полное ЕГАИС наименование товара",
     )
 
     # Объем продукции. Если не указан, то считаем, что позиция разливная и нужно выставить флаг,
@@ -79,10 +83,10 @@ class KonturMarketDBGood(models.Model):
     )
 
     @staticmethod
-    def save_objects_to_db(list_km_goods: List[km_class.StockEGAIS]) -> None:
-        """Метод сохранения данных о товарах в БД."""
+    def save_objects_to_db(list_km_goods: List["km_class.StockEGAIS"]) -> bool:
+        """Метод сохраняет товары в БД."""
         if not list_km_goods:
-            return
+            return False
 
         km_good: km_class.StockEGAIS
         for km_good in list_km_goods:
@@ -108,6 +112,8 @@ class KonturMarketDBGood(models.Model):
             producer.save()
             good.save()
             stock.save()
+
+        return True
 
 
 class KonturMarketDBStock(models.Model):

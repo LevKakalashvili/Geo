@@ -6,6 +6,7 @@ from typing import List, Optional, Tuple
 import requests
 from pydantic import BaseModel, Field
 
+import Sync_app.models.konturmarket_models as km_models
 import Sync_app.privatedata.kontrurmarket_privatedata as km_pvdata
 from Sync_app.konturmarket.konturmarket_urls import (
     KonturMarketUrl, UrlType, get_url,
@@ -110,6 +111,15 @@ class KonturMarket:
             headers=url.headers,
             cookies=url.cookies,
         )
-        self.connection_ok = response.ok
-
         return response.ok
+
+    def sync_assortment(self) -> bool:
+        """Метод заполняет БД товарами из сервиса КонтурМаркет."""
+        if not self.login():
+            return False
+
+        km_goods = self.get_egais_assortment()
+        if km_goods:
+            return km_models.KonturMarketDBGood.save_objects_to_db(list_km_goods=km_goods)
+
+        return True

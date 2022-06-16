@@ -38,7 +38,8 @@ class MoySkladDBGood(models.Model):
 
         constraints = [
             CheckConstraint(
-                check=Q(bev_type__in=["".join(element.value) for element in ms_const.GoodType]), name="valid_good_type",
+                check=Q(bev_type__in=["".join(element.value) for element in ms_const.GoodType]),
+                name="valid_good_type",
             ),
         ]
 
