@@ -22,6 +22,14 @@ class Command(BaseCommand):  # noqa: D101
         )
 
         parser.add_argument(
+            "-mrd",
+            "--moysklad_retaildemand",
+            action="store_true",
+            default=False,
+            help="Запустить импорт товаров, проданных за текущий день",
+        )
+
+        parser.add_argument(
             "-ka",
             "--konturmarket_assortment",
             action="store_true",
@@ -40,15 +48,23 @@ class Command(BaseCommand):  # noqa: D101
     def handle(self, *args: Tuple[str], **kwargs: Dict[str, Any]) -> None:  # noqa: D102
 
         moysklad_assortment = kwargs["moysklad_assortment"]
+        moysklad_retaildemand = kwargs["moysklad_retaildemand"]
         konturmarket_assortment = kwargs["konturmarket_assortment"]
         google_compl_table = kwargs["google_compl_table"]
 
+        ms: ms_class.MoySklad = ms_class.MoySklad()
+
         # Синхронизация МойСклад
         if moysklad_assortment:
-            ms: ms_class.MoySklad = ms_class.MoySklad()
 
             if not ms.sync_assortment():
                 self.stdout.write(self.style.ERROR("Ошибка. Не удалось получить данные из сервиса МойСклад."))
+
+        # Импорт товаров, проданных за смену
+        if moysklad_retaildemand:
+
+            if not ms.sync_retail_demand():
+                self.stdout.write(self.style.ERROR("Ошибка. Не удалось товары, проданные за смену из сервиса МойСклад."))
 
         # Синхронизация КонтурМаркет
         if konturmarket_assortment:

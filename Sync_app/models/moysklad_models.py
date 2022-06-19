@@ -1,6 +1,7 @@
 """Модуль содержит описание моделей для работы с МойСклад."""
 from typing import TYPE_CHECKING, List
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models import CheckConstraint, Q
 from django.db.utils import IntegrityError
@@ -126,10 +127,10 @@ class MoySkladDBGood(models.Model):
                 # Если по какой-то причине остаток товара в МойСклад отрицательный в БД сохраняем 0
                 quantity=ms_good.quantity if ms_good.quantity >= 0 else 0,
             )
-            # Сохраняем товары в таблицу
-            # Сохраняем остатки в таблицу
             try:
+                # Сохраняем товары в таблицу
                 good.save()
+                # Сохраняем остатки в таблицу
                 stocks.save()
             except IntegrityError as error:
                 # TODO: переделать на логгер
@@ -149,3 +150,29 @@ class MoySkladDBStock(models.Model):
         primary_key=True,
         help_text="Уникальный идентификатор товара",
     )
+
+
+class MoySkladDBRetailDemand(models.Model):
+    """Класс описывает модель розничной продажи продаж."""
+
+    # UUID проданного товара
+    uuid = models.ForeignKey(MoySkladDBGood, help_text="Идентификатор проданного товара", on_delete=models.DO_NOTHING,
+                             db_column='uuid')
+    # Количество проданного товара.
+    quantity = models.PositiveSmallIntegerField(help_text="Остаток товара на складе")
+
+    @staticmethod
+    def save_objects_to_db(list_retail_demand: List["ms_class.RetailDemandPosition"]) -> bool:
+        """Метод сохраняет объекты, созданные на основе списка list_retail_demand в БД."""
+
+        if not list_retail_demand:
+            return False
+
+        for rd in list_retail_demand:
+            # Т.к. в таблице товаров хранятся только алкогольные товары
+            try:
+                MoySkladDBGood.objects.get(uuid=rd.good_id)
+            except ObjectDoesNotExist:
+                continue
+            retail_demand = MoySkladDBRetailDemand(uuid=rd.good_id, quantity=rd.quantity)
+        return True

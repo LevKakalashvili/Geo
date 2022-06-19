@@ -7,12 +7,21 @@ from typing import Any, Dict, List, NamedTuple, Optional, Union
 import requests
 from pydantic import BaseModel, Field
 
-import Sync_app.moysklad.moysklad_urls as ms_urls
 import Sync_app.models.moysklad_models as ms_model
+import Sync_app.moysklad.moysklad_urls as ms_urls
 import Sync_app.privatedata.moysklad_privatedata as ms_pvdata
 from Sync_app.moysklad.moysklad_constants import (
     _MODIFICATION_SET, _TRASH, Characteristics, GoodType,
 )
+
+
+class RetailDemandPosition(NamedTuple):
+    """Класс используется только для позиций проданных товаров."""
+
+    # Id товара проданного товара
+    good_id: str
+    # Количество проданного товара
+    quantity: int
 
 
 class GoodTuple(NamedTuple):
@@ -316,6 +325,36 @@ class Good(BaseModel):
         return GoodTuple()
 
 
+class Position(BaseModel):
+    """Класс описывает единицу товара, входящей в продажу."""
+
+    # Уникальный идентификатор товара в продаже
+    id: str
+    # Количество товаров в позиции
+    quantity: float
+    # Проданный товар
+    good: Good = Field(alias="assortment")
+
+
+class DemandPositions(BaseModel):
+    """Класс описывает список товаров, входящей в продажу."""
+
+    all: List[Position] = Field(alias="rows")
+
+
+class RetailDemand(BaseModel):
+    """Класс описывает структуру одной продажи (чека)."""
+
+    # Уникальный идентификатор продажи
+    id: str
+    # Номер, имя продажи
+    name: str
+    # Дата создания продажи
+    created: datetime.datetime
+    # Товары входящие в продажу, чек
+    positions: DemandPositions
+
+
 @dataclass()
 class MoySklad:
     """Класс описывает работу с сервисом МойСклад по JSON API 1.2 https://dev.moysklad.ru/doc/api/remap/1.2/#mojsklad-json-api."""
@@ -334,7 +373,10 @@ class MoySklad:
         if request_new:
             # Получаем url запроса
             url: ms_urls.MoySkladUrl = ms_urls.get_url(
-                ms_urls.UrlType.TOKEN, start_period=datetime.date.today(), end_period=None, offset=0,
+                ms_urls.UrlType.TOKEN,
+                start_period=datetime.date.today(),
+                end_period=None,
+                offset=0,
             )
             # Получаем заголовок запроса
             header: Dict[str, Any] = ms_urls.get_headers(self._token)
@@ -368,7 +410,10 @@ class MoySklad:
         while need_request:
             # Получаем url для отправки запроса в сервис
             url: ms_urls.MoySkladUrl = ms_urls.get_url(
-                ms_urls.UrlType.ASSORTMENT, start_period=None, end_period=None, offset=counter * 1000,
+                ms_urls.UrlType.ASSORTMENT,
+                start_period=None,
+                end_period=None,
+                offset=counter * 1000,
             )
 
             response = requests.get(url.url, url.request_filter, headers=header)
@@ -399,5 +444,62 @@ class MoySklad:
         # Получаем ассортимент из МойСклад
         ms_goods = self.get_assortment()
         # Обновляем БД объектами ассортимента МойСклад
-        if ms_goods:
-            return ms_model.MoySkladDBGood.save_objects_to_db(list_ms_goods=ms_goods)
+        if not ms_goods:
+            return False
+
+        return ms_model.MoySkladDBGood.save_objects_to_db(list_ms_goods=ms_goods)
+
+    def sync_retail_demand(self) -> bool:
+        """Метод импортирует товары из сервиса МойСклад, проданные за текущую дату."""
+
+        # Получаем токен для работы с сервисом МойСклад
+        if not self.set_token(request_new=True):
+            return False
+
+        # Получаем ассортимент из МойСклад
+        ms_goods = self.get_retail_demand_by_period(
+            start_period=datetime.date.today() + datetime.timedelta(days=-1),
+            end_period=None,
+        )
+
+        # Обновляем БД объектами ассортимента МойСклад
+        if not ms_goods:
+            return False
+
+        return ms_model.MoySkladDBRetailDemand.save_objects_to_db(list_ms_goods=ms_goods)
+
+
+    def get_retail_demand_by_period(
+        self,
+        start_period: Optional[datetime.datetime],
+        end_period: Optional[datetime.datetime],
+    ) -> List[RetailDemandPosition]:
+        """Метод возвращает список, проданных товаров за период.
+
+        :param start_period: начало запрашиваемого периода start_period 00:00:00.
+        :param end_period: конец запрашиваемого периода end_period 23:59:00.
+        """
+        if not self._token:
+            return []
+
+        # Получаем заголовки для запроса в сервис
+        header: Dict[str, Any] = ms_urls.get_headers(self._token)
+
+        # Получаем url для отправки запроса в сервис
+        url: ms_urls.MoySkladUrl = ms_urls.get_url(
+            ms_urls.UrlType.RETAIL_DEMAND,
+            start_period=start_period,
+            end_period=end_period,
+            offset=0,
+        )
+        response = requests.get(url.url, url.request_filter, headers=header)
+        if not response.ok:
+            return []
+        rows: List[Dict[str, Any]] = response.json().get("rows")
+
+        goods: List[RetailDemandPosition] = []
+
+        for retail_demand in rows:
+            for position in RetailDemand(**retail_demand).positions.all:
+                goods.append(RetailDemandPosition(good_id=position.good.good_id, quantity=int(position.quantity)))
+        return goods
