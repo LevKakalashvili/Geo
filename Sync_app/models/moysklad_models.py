@@ -155,24 +155,38 @@ class MoySkladDBStock(models.Model):
 class MoySkladDBRetailDemand(models.Model):
     """Класс описывает модель розничной продажи продаж."""
 
-    # UUID проданного товара
-    uuid = models.ForeignKey(MoySkladDBGood, help_text="Идентификатор проданного товара", on_delete=models.DO_NOTHING,
-                             db_column='uuid')
-    # Количество проданного товара.
+    # Дата продажи
+    demand_date = models.DateField(null=True, blank=True, default=None, help_text="Дата продажи")
+
+    # Количество проданного товара
     quantity = models.PositiveSmallIntegerField(help_text="Остаток товара на складе")
+
+    # UUID проданного товара
+    uuid = models.ForeignKey(
+        MoySkladDBGood, help_text="Идентификатор проданного товара", on_delete=models.DO_NOTHING, db_column="uuid",
+    )
 
     @staticmethod
     def save_objects_to_db(list_retail_demand: List["ms_class.RetailDemandPosition"]) -> bool:
         """Метод сохраняет объекты, созданные на основе списка list_retail_demand в БД."""
-
         if not list_retail_demand:
             return False
 
-        for rd in list_retail_demand:
-            # Т.к. в таблице товаров хранятся только алкогольные товары
+        # Получаем список всех проданного пива
+        sold_goods = MoySkladDBGood.objects.filter(uuid__in=[_.good_id for _ in list_retail_demand])
+        # Чистим таблицу
+        MoySkladDBRetailDemand.objects.all().delete()
+        save_list: List[MoySkladDBRetailDemand] = []
+        # Сохраняем проданные товары
+        for good in list_retail_demand:
             try:
-                MoySkladDBGood.objects.get(uuid=rd.good_id)
+                save_list.append(
+                    MoySkladDBRetailDemand(
+                        uuid=sold_goods.get(uuid=good.good_id), quantity=good.quantity, demand_date=good.demand_date,
+                    ),
+                )
             except ObjectDoesNotExist:
                 continue
-            retail_demand = MoySkladDBRetailDemand(uuid=rd.good_id, quantity=rd.quantity)
+        # Сохраняем продажи в БД
+        MoySkladDBRetailDemand.objects.bulk_create(save_list)
         return True
