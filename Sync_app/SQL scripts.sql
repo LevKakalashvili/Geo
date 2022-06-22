@@ -111,3 +111,10 @@ HAVING cnt > 1;
 select *
 from sync_app_moyskladdbgood sam 
 where sam.is_draft;
+
+-- Проданные товары за смену
+SELECT sam.full_name, sam2.quantity, sam2.demand_date 
+FROM geo.Sync_app_moyskladdbgood sam, geo.Sync_app_moyskladdbretaildemand sam2 
+WHERE sam.uuid = sam2.uuid
+ORDER by full_name 
+
