@@ -22,6 +22,8 @@ class RetailDemandPosition(NamedTuple):
     good_id: str
     # Количество проданного товара
     quantity: int
+    # Дата продажи
+    demand_date: str
 
 
 class GoodTuple(NamedTuple):
@@ -329,7 +331,7 @@ class Position(BaseModel):
     """Класс описывает единицу товара, входящей в продажу."""
 
     # Уникальный идентификатор товара в продаже
-    id: str
+    uuid: str = Field(alias="id")
     # Количество товаров в позиции
     quantity: float
     # Проданный товар
@@ -339,14 +341,18 @@ class Position(BaseModel):
 class DemandPositions(BaseModel):
     """Класс описывает список товаров, входящей в продажу."""
 
-    all: List[Position] = Field(alias="rows")
+    _all: List[Position] = Field(alias="rows")
+
+    @property
+    def all(self):
+        return self._all
 
 
 class RetailDemand(BaseModel):
     """Класс описывает структуру одной продажи (чека)."""
 
     # Уникальный идентификатор продажи
-    id: str
+    rd_id: str = Field(alias="id")
     # Номер, имя продажи
     name: str
     # Дата создания продажи
@@ -436,7 +442,6 @@ class MoySklad:
 
     def sync_assortment(self) -> bool:
         """Метод заполняет БД товарами из сервиса МойСклад."""
-
         # Получаем токен для работы с сервисом МойСклад
         if not self.set_token(request_new=True):
             return False
@@ -451,7 +456,6 @@ class MoySklad:
 
     def sync_retail_demand(self) -> bool:
         """Метод импортирует товары из сервиса МойСклад, проданные за текущую дату."""
-
         # Получаем токен для работы с сервисом МойСклад
         if not self.set_token(request_new=True):
             return False
@@ -466,13 +470,12 @@ class MoySklad:
         if not ms_goods:
             return False
 
-        return ms_model.MoySkladDBRetailDemand.save_objects_to_db(list_ms_goods=ms_goods)
-
+        return ms_model.MoySkladDBRetailDemand.save_objects_to_db(list_retail_demand=ms_goods)
 
     def get_retail_demand_by_period(
         self,
-        start_period: Optional[datetime.datetime],
-        end_period: Optional[datetime.datetime],
+        start_period: Optional[datetime.date],
+        end_period: Optional[datetime.date],
     ) -> List[RetailDemandPosition]:
         """Метод возвращает список, проданных товаров за период.
 
@@ -497,9 +500,18 @@ class MoySklad:
             return []
         rows: List[Dict[str, Any]] = response.json().get("rows")
 
-        goods: List[RetailDemandPosition] = []
+        goods: Dict[str, RetailDemandPosition] = {}
 
         for retail_demand in rows:
-            for position in RetailDemand(**retail_demand).positions.all:
-                goods.append(RetailDemandPosition(good_id=position.good.good_id, quantity=int(position.quantity)))
-        return goods
+            for position in RetailDemand(**retail_demand).positions._all:
+                if not goods.get(position.good.good_id):
+                    goods[position.good.good_id] = RetailDemandPosition(
+                        good_id=position.good.good_id,
+                        quantity=int(position.quantity),
+                        demand_date=RetailDemand(**retail_demand).created.strftime("%Y-%m-%d"),
+                    )
+                else:
+                    goods[position.good.good_id] = goods[position.good.good_id]._replace(
+                        quantity=goods[position.good.good_id].quantity + int(position.quantity),
+                    )
+        return list(goods.values())
