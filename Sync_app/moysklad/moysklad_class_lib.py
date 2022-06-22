@@ -361,6 +361,7 @@ class RetailDemand(BaseModel):
     positions: DemandPositions
 
 
+# noinspection PyProtectedMember
 @dataclass()
 class MoySklad:
     """Класс описывает работу с сервисом МойСклад по JSON API 1.2 https://dev.moysklad.ru/doc/api/remap/1.2/#mojsklad-json-api."""
@@ -461,8 +462,10 @@ class MoySklad:
             return False
 
         # Получаем ассортимент из МойСклад
+        # TODO Сделать получение даты из командной строки
         ms_goods = self.get_retail_demand_by_period(
-            start_period=datetime.date.today() + datetime.timedelta(days=-1),
+            # start_period=datetime.date.today() + datetime.timedelta(days=-1),
+            start_period=None,
             end_period=None,
         )
 
