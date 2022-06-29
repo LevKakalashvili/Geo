@@ -6,7 +6,6 @@ from django.db import models
 from django.db.models import CheckConstraint, Q
 from django.db.utils import IntegrityError
 
-import Sync_app.models.konturmarket_models as km_model
 import Sync_app.moysklad.moysklad_constants as ms_const
 
 if TYPE_CHECKING:
@@ -88,7 +87,9 @@ class MoySkladDBGood(models.Model):
     # Емкость тары
     capacity = models.DecimalField(max_digits=5, decimal_places=3, help_text="Емкость тары")
     # Код ЕГАИС
-    egais_code = models.ManyToManyField(km_model.KonturMarketDBGood, help_text="Код алкогольной продукции")
+    egais_code = models.ManyToManyField(
+        "KonturMarketDBGood", help_text="Код алкогольной продукции", related_name="goods",
+    )
 
     @staticmethod
     def save_objects_to_db(list_ms_goods: List["ms_class.Good"]) -> bool:
@@ -133,7 +134,7 @@ class MoySkladDBGood(models.Model):
                 # Сохраняем остатки в таблицу
                 stocks.save()
             except IntegrityError as error:
-                # TODO: переделать на логгер
+                # TODO: переделать на логгер или Sentry
                 print(f"\nWARNING! {error.args[1]}")
         return True
 
@@ -163,7 +164,10 @@ class MoySkladDBRetailDemand(models.Model):
 
     # UUID проданного товара
     uuid = models.ForeignKey(
-        MoySkladDBGood, help_text="Идентификатор проданного товара", on_delete=models.DO_NOTHING, db_column="uuid",
+        MoySkladDBGood,
+        help_text="Идентификатор проданного товара",
+        on_delete=models.DO_NOTHING,
+        db_column="uuid",
     )
 
     @staticmethod
@@ -182,7 +186,9 @@ class MoySkladDBRetailDemand(models.Model):
             try:
                 save_list.append(
                     MoySkladDBRetailDemand(
-                        uuid=sold_goods.get(uuid=good.good_id), quantity=good.quantity, demand_date=good.demand_date,
+                        uuid=sold_goods.get(uuid=good.good_id),
+                        quantity=good.quantity,
+                        demand_date=good.demand_date,
                     ),
                 )
             except ObjectDoesNotExist:
