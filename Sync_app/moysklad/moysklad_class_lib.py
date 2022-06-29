@@ -26,6 +26,12 @@ class RetailDemandPosition(NamedTuple):
     demand_date: str
 
 
+class RetailReturnedPosition(RetailDemandPosition):
+    """Класс используется только для позиций возвратных товаров."""
+
+    pass
+
+
 class GoodTuple(NamedTuple):
     """Класс используется только для разложения полного наименования товара на составные части.
 
@@ -341,11 +347,7 @@ class Position(BaseModel):
 class DemandPositions(BaseModel):
     """Класс описывает список товаров, входящей в продажу."""
 
-    _all: List[Position] = Field(alias="rows")
-
-    @property
-    def all(self):
-        return self._all
+    all_: List[Position] = Field(alias="rows")
 
 
 class RetailDemand(BaseModel):
@@ -358,7 +360,7 @@ class RetailDemand(BaseModel):
     # Дата создания продажи
     created: datetime.datetime
     # Товары входящие в продажу, чек
-    positions: DemandPositions
+    positions: Optional[DemandPositions]
 
 
 # noinspection PyProtectedMember
@@ -370,12 +372,31 @@ class MoySklad:
     # https://dev.moysklad.ru/doc/api/remap/1.2/#mojsklad-json-api-obschie-swedeniq-autentifikaciq
     _token: str = ""
 
+    @staticmethod
+    def _exclude_returned_goods(
+            sold_goods: list[RetailDemandPosition], returned_goods: list[RetailReturnedPosition],
+    ) -> list[RetailDemandPosition]:
+        """Метод удаляет количество товара из списка returned_goods, в списке sold_goods."""
+        sold_goods_dict = {good.good_id: good for good in sold_goods}
+        for ret in returned_goods:
+            if sold_goods_dict.get(ret.good_id):
+                if sold_goods_dict[ret.good_id].quantity - ret.quantity < 1:
+                    del sold_goods_dict[ret.good_id]
+                else:
+                    sold_goods_dict[ret.good_id] = sold_goods_dict[ret.good_id]._replace(
+                        quantity=(sold_goods_dict[ret.good_id].quantity - ret.quantity),
+                    )
+        return list(sold_goods_dict.values())
+
     def set_token(self, request_new: bool = True) -> bool:
         """Получение токена для доступа и работы с МС по JSON API 1.2. При успешном ответе возвращаем True, в случае ошибок False.
 
         :param request_new: True, каждый раз будет запрашиваться новый токен,
             если False будет браться из moysklad_privatedata.py
         """
+        if self._token:
+            return True
+
         # если необходимо запросить новый токен у сервиса
         if request_new:
             # Получаем url запроса
@@ -455,25 +476,31 @@ class MoySklad:
 
         return ms_model.MoySkladDBGood.save_objects_to_db(list_ms_goods=ms_goods)
 
-    def sync_retail_demand(self) -> bool:
+    def sync_retail_demand(self, date_: datetime.date) -> bool:
         """Метод импортирует товары из сервиса МойСклад, проданные за текущую дату."""
         # Получаем токен для работы с сервисом МойСклад
         if not self.set_token(request_new=True):
             return False
 
         # Получаем ассортимент из МойСклад
-        # TODO Сделать получение даты из командной строки
-        ms_goods = self.get_retail_demand_by_period(
-            # start_period=datetime.date.today() + datetime.timedelta(days=-1),
-            start_period=None,
+        ms_sold_goods = self.get_retail_demand_by_period(
+            start_period=date_,
+            end_period=None,
+        )
+
+        ms_returned_goods = self.get_retail_sales_return_by_period(
+            start_period=date_,
             end_period=None,
         )
 
         # Обновляем БД объектами ассортимента МойСклад
-        if not ms_goods:
+        if not ms_sold_goods:
             return False
 
-        return ms_model.MoySkladDBRetailDemand.save_objects_to_db(list_retail_demand=ms_goods)
+        if ms_returned_goods:
+            ms_sold_goods = self._exclude_returned_goods(sold_goods=ms_sold_goods, returned_goods=ms_returned_goods)
+
+        return ms_model.MoySkladDBRetailDemand.save_objects_to_db(list_retail_demand=ms_sold_goods)
 
     def get_retail_demand_by_period(
         self,
@@ -485,28 +512,14 @@ class MoySklad:
         :param start_period: начало запрашиваемого периода start_period 00:00:00.
         :param end_period: конец запрашиваемого периода end_period 23:59:00.
         """
-        if not self._token:
-            return []
-
-        # Получаем заголовки для запроса в сервис
-        header: Dict[str, Any] = ms_urls.get_headers(self._token)
-
-        # Получаем url для отправки запроса в сервис
-        url: ms_urls.MoySkladUrl = ms_urls.get_url(
-            ms_urls.UrlType.RETAIL_DEMAND,
-            start_period=start_period,
-            end_period=end_period,
-            offset=0,
+        rows: List[Dict[str, Any]] = self._get_retail_data_by_period(
+            start_period=start_period, end_period=end_period, data_type=ms_urls.UrlType.RETAIL_DEMAND,
         )
-        response = requests.get(url.url, url.request_filter, headers=header)
-        if not response.ok:
-            return []
-        rows: List[Dict[str, Any]] = response.json().get("rows")
 
         goods: Dict[str, RetailDemandPosition] = {}
 
         for retail_demand in rows:
-            for position in RetailDemand(**retail_demand).positions._all:
+            for position in RetailDemand(**retail_demand).positions.all_:
                 if not goods.get(position.good.good_id):
                     goods[position.good.good_id] = RetailDemandPosition(
                         good_id=position.good.good_id,
@@ -518,3 +531,66 @@ class MoySklad:
                         quantity=goods[position.good.good_id].quantity + int(position.quantity),
                     )
         return list(goods.values())
+
+    def get_retail_sales_return_by_period(
+        self,
+        start_period: Optional[datetime.date],
+        end_period: Optional[datetime.date],
+    ) -> List[RetailReturnedPosition]:
+        """Метод возвращает список, возвращенных товаров за период.
+
+        :param start_period: начало запрашиваемого периода start_period 00:00:00.
+        :param end_period: конец запрашиваемого периода end_period 23:59:00.
+        """
+        rows: List[Dict[str, Any]] = self._get_retail_data_by_period(
+            start_period=start_period, end_period=end_period, data_type=ms_urls.UrlType.RETAIL_RETURN,
+        )
+
+        goods: Dict[str, RetailReturnedPosition] = {}
+
+        for retail_returns in rows:
+            for position in RetailDemand(**retail_returns).positions.all_:
+                if not goods.get(position.good.good_id):
+                    goods[position.good.good_id] = RetailReturnedPosition(
+                        good_id=position.good.good_id,
+                        quantity=int(position.quantity),
+                        demand_date=RetailDemand(**retail_returns).created.strftime("%Y-%m-%d"),
+                    )
+                else:
+                    goods[position.good.good_id] = goods[position.good.good_id]._replace(
+                        quantity=goods[position.good.good_id].quantity + int(position.quantity),
+                    )
+        return list(goods.values())
+
+    def _get_retail_data_by_period(
+            self, start_period: Optional[datetime.date], end_period: Optional[datetime.date],
+            data_type: ms_urls.UrlType,
+    ) -> List[Dict[str, Any]]:
+        """Метод возвращает список, проданных или списанных товаров за период.
+
+        :param start_period: начало запрашиваемого периода start_period 00:00:00.
+        :param end_period: конец запрашиваемого периода end_period 23:59:00.
+        :param data_type: тип запрашиваемых данных RETAIL_DEMAND - розничные продажи, RETAIL_RETURN - возвраты
+        """
+        if not self._token and (
+                data_type != ms_urls.UrlType.RETAIL_DEMAND or data_type != ms_urls.UrlType.RETAIL_RETURN
+        ):
+            return []
+
+        # Получаем заголовки для запроса в сервис
+        header: Dict[str, Any] = ms_urls.get_headers(self._token)
+
+        # Получаем url для отправки запроса в сервис
+        url: ms_urls.MoySkladUrl = ms_urls.get_url(
+            _type=data_type,
+            start_period=start_period,
+            end_period=end_period,
+            offset=0,
+        )
+        response = requests.get(url.url, url.request_filter, headers=header)
+        if not response.ok:
+            return []
+
+        rows: List[Dict[str, Any]] = response.json().get("rows")
+
+        return rows
