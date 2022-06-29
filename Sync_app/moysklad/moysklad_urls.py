@@ -27,6 +27,7 @@ class UrlType(Enum):
     TOKEN = 1
     RETAIL_DEMAND = 2
     ASSORTMENT = 3
+    RETAIL_RETURN = 4
 
 
 class MoySkladUrl(NamedTuple):
@@ -84,7 +85,7 @@ def get_url(
         url = MoySkladUrl(urljoin(JSON_URL, "security/token"), {})
 
     # если нужен url для запроса продаж
-    elif _type == UrlType.RETAIL_DEMAND:
+    elif _type == UrlType.RETAIL_DEMAND or _type == UrlType.RETAIL_RETURN:
         # если конец периода не указан входным параметром, считаем, что запросили продажи за вчера
         if start_period is None:
             start_period = date.today()
@@ -109,7 +110,14 @@ def get_url(
             "expand": "positions,positions.assortment",
             "limit": "100",
         }
-        url = MoySkladUrl(urljoin(JSON_URL, "entity/retaildemand"), request_filter)
+
+        if _type == UrlType.RETAIL_DEMAND:
+            entity = "retaildemand"
+        else:
+            entity = "retailsalesreturn"
+
+        url = MoySkladUrl(urljoin(JSON_URL, f"entity/{entity}"), request_filter)
+
     # # если нужен url для запроса ассортимента
     elif _type == UrlType.ASSORTMENT:
         request_filter = {
