@@ -7,6 +7,14 @@ EGAIS_ASSORTMENT_URL = (
     "https://market.kontur.ru/api/v105/a095a331-45ed-444e-8977-0a1eb28fee92/ae2fa6c7-dcbb-4c0b"
     "-b4e2-3d63bb6eabd5/055adf4b-e674-4dcd-9095-3e8c31785ac9/Rests/List"
 )
+EGAIS_SALES_JOURNAL_WRITE_URL = (
+    "https://market.kontur.ru/api/v106/a095a331-45ed-444e-8977-0a1eb28fee92/ae2fa6c7-dcbb-4c0b"
+    "-b4e2-3d63bb6eabd5/055adf4b-e674-4dcd-9095-3e8c31785ac9/SalesJournal/WriteDay"
+)
+EGAIS_SALES_JOURNAL_READ_URL = (
+    "https://market.kontur.ru/api/v106/a095a331-45ed-444e-8977-0a1eb28fee92/ae2fa6c7-dcbb-4c0b"
+    "-b4e2-3d63bb6eabd5/055adf4b-e674-4dcd-9095-3e8c31785ac9/SalesJournal/ReadDay"
+)
 
 
 class UrlType(Enum):
@@ -14,10 +22,13 @@ class UrlType(Enum):
 
     login - авторизация пользователя.
     egais_assortment - справочник товаров (ЕГАИС наименований)
+    egais_sales_journal - создать журнал учета продаж (ЕГАИС наименований)
     """
 
     LOGIN = 1
     EGAIS_ASSORTMENT = 2
+    EGAIS_SALES_JOURNAL_WRITE = 3
+    EGAIS_SALES_JOURNAL_READ = 4
 
 
 class KonturMarketUrl(NamedTuple):
@@ -39,7 +50,7 @@ def get_url(url_type: UrlType) -> KonturMarketUrl:
     """Метод для получения url.
 
     :param url_type: UrlType.login - url для авторизации в сервисе, UrlType.egais_assortment - url для списка ЕГАИС
-    наименований.
+    наименований, UrlType.egais_sales_journal - журнал учета розничных продаж
     :returns: Возвращается объект Url
     """
     url: KonturMarketUrl
@@ -47,7 +58,16 @@ def get_url(url_type: UrlType) -> KonturMarketUrl:
     if url_type == UrlType.LOGIN:
         # Возвращаем ссылку на форму для авторизации в сервисе
         url = KonturMarketUrl(url=AUTH_URL)
+
     elif url_type == UrlType.EGAIS_ASSORTMENT:
-        # Возвращаем ссылку на раздел в Товары/Пиво в сервисе Конутр.Маркет
+        # Возвращаем ссылку на раздел в Товары/Пиво в сервисе Контур.Маркет
         url = KonturMarketUrl(url=EGAIS_ASSORTMENT_URL)
+
+    elif url_type == UrlType.EGAIS_SALES_JOURNAL_WRITE:
+        # Возвращаем ссылку (для записи) на раздел в Журнал учёта продаж в сервисе Контур.Маркет
+        url = KonturMarketUrl(url=EGAIS_SALES_JOURNAL_WRITE_URL, headers={}, cookies={})
+
+    elif url_type == UrlType.EGAIS_SALES_JOURNAL_READ:
+        # Возвращаем ссылку (на чтение) на раздел в Журнал учёта продаж в сервисе Контур.Маркет
+        url = KonturMarketUrl(url=EGAIS_SALES_JOURNAL_READ_URL, headers={}, cookies={})
     return url
