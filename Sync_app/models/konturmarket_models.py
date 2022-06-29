@@ -1,7 +1,15 @@
 """Модуль содержит описание моделей для работы с сервисом Контур.Маркет."""
-from typing import TYPE_CHECKING, List
+import datetime
+import sys
+from operator import itemgetter
+from typing import TYPE_CHECKING, Dict, List, Union
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
+
+from Sync_app.models.moysklad_models import (
+    MoySkladDBGood, MoySkladDBRetailDemand,
+)
 
 if TYPE_CHECKING:
     import Sync_app.konturmarket.konturmarket_class_lib as km_class
@@ -75,6 +83,12 @@ class KonturMarketDBGood(models.Model):
         help_text="Признак разливного пива",
     )
 
+    # Код алкогольной продукции
+    kind_code = models.IntegerField(
+        default=None,
+        help_text="Код вида продукции",
+    )
+
     # Внешний ключ на модель, таблицу производителя
     fsrar = models.ForeignKey(
         KonturMarketDBProducer,
@@ -105,6 +119,7 @@ class KonturMarketDBGood(models.Model):
                 capacity=km_good.good.capacity if km_good.good.capacity else 99,
                 # Т.к. km_good.good.capacity может быть None
                 is_draft=True if km_good.good.capacity is None or km_good.good.capacity > 10 else False,
+                kind_code=km_good.good.kind_code,
             )
 
             stock = KonturMarketDBStock(quantity=km_good.quantity_2, egais_code=good)
@@ -114,6 +129,66 @@ class KonturMarketDBGood(models.Model):
             stock.save()
 
         return True
+
+    @staticmethod
+    def get_sales_journal_from_db(date_: datetime.date) -> List[Dict[str, Union[str, int]]]:
+        """Метод для получения журнала розничных продаж алкоголя из БД."""
+        sales: List[Dict[str, Union[str, int]]] = []
+        # Получаем uuid из продаж
+        for retail_demand in MoySkladDBRetailDemand.objects.filter(demand_date=date_):
+            ms_good = MoySkladDBGood.objects.get(uuid=retail_demand.uuid_id)
+
+            # Если к коммерческому товару привязано несколько товаров ЕГАИС, и остаток всех товаров ЕГАИС не нулевое
+            # то, KonturMarketDBGood.objects.filter(goods__uuid__exact=retail_demand.uuid_id, goods__is_draft=False)
+            # вернет список длиной больше 1
+            # Нужно проверить, если количество проданного товара, меньше либо равно остатку текущего остатка ЕГАИС,
+            # то списываем и брейком выходим из цикла
+            # Если количество проданного товара, больше, чем остаток текущего элемента ЕГАИС, то нужно добавить текущий
+            # элемент ЕГАИС в список для списания, уменьшить количество проданного товара и перейти к следующему элементу ЕГАИС
+
+            # Получаем все объекты ЕГАИС связанные текущим товаром МойСклад
+            for km_good in KonturMarketDBGood.objects.filter(
+                goods__uuid__exact=retail_demand.uuid_id, goods__is_draft=False,
+            ):
+                # Проверяем товар по таблице остатков ЕГАИС
+                # Если не удалось найти товар с таким ЕГАИС кодом и положительным остатком
+                # пропускаем товар
+                try:
+                    km_stock = KonturMarketDBStock.objects.get(egais_code__exact=km_good.egais_code, quantity__gt=0)
+                except ObjectDoesNotExist:
+                    # TODO: переделать на логгер
+                    sys.stdout.write(
+                        f"Предупреждение. Не удалось получить ЕГАИС остаток для кода: {km_good.egais_code}, товара: {ms_good.full_name}.\n",
+                    )
+                    continue
+
+                # Если списали все количество за раз, выходим из цикла. Списали все, что нужно
+                if retail_demand.quantity == 0:
+                    break
+
+                quantity: int = 0
+                # Если остаток ЕГАИС больше или равен количеству проданного товара
+                if km_stock.quantity >= retail_demand.quantity:
+                    quantity = retail_demand.quantity
+                    retail_demand.quantity -= quantity
+                else:
+                    retail_demand.quantity -= km_stock.quantity
+
+                sales.append(
+                    {
+                        "commercial_name": ms_good.full_name,
+                        "name": km_good.full_name,
+                        "alcCode": km_good.egais_code,
+                        "apCode": km_good.kind_code,
+                        "volume": km_good.capacity,
+                        # если в БД остаток товара меньшие реально проданного, то списываем товар под ноль
+                        "quantity": quantity,
+                        "price": ms_good.price,
+                    },
+                )
+
+        sales = sorted(sales, key=itemgetter("commercial_name"))
+        return sales
 
 
 class KonturMarketDBStock(models.Model):
