@@ -1,4 +1,5 @@
 """В модуле описаны классы для работы с сервисом Контур.Маркет https://market.kontur.ru/."""
+import datetime
 import json
 from dataclasses import dataclass
 from typing import List, Optional, Tuple
@@ -44,6 +45,9 @@ class GoodEGAIS(BaseModel):
     # Описание производителя
     brewery: Brewery = Field(alias="producer")
 
+    # Код вида продукции
+    kind_code: int = Field(alias="productKindCode")
+
     def to_tuple(self) -> Tuple[str, str, str]:
         """Метод возвращает кортеж вида (ЕГАИС_НАИМЕНОВАНИЕ, ЕГАИС_КОД)."""
         return self.name, self.alco_code, self.brewery.short_name
@@ -73,8 +77,6 @@ class KonturMarket:
     def __init__(self) -> None:
         """Конструктор."""
         # Переменная устанавливается в True, в случае успешного логина в сервисе
-        self.connection_ok: bool = False
-
         self._session = requests.Session()
 
     def get_egais_assortment(self) -> List[StockEGAIS]:
@@ -123,3 +125,43 @@ class KonturMarket:
             return km_models.KonturMarketDBGood.save_objects_to_db(list_km_goods=km_goods)
 
         return True
+
+    def create_sales_journal(self, date_: datetime.date) -> bool:
+        """Создание журнала розничных продаж в системе ЕГАИС."""
+        if self.login():
+            url_sales_read: KonturMarketUrl = get_url(UrlType.EGAIS_SALES_JOURNAL_READ)
+            response = self._session.get(
+                url=url_sales_read.url,
+                params={
+                    "date": date_.__str__(),
+                },
+            )
+            # Если получили ответ  журнал не содержит записи
+            if response.ok and not response.json().get("day", []).get("rows", []):
+                journal = km_models.KonturMarketDBGood.get_sales_journal_from_db(date_=date_)
+                journal_json = {
+                    "day": {
+                        "day": date_.__str__(),
+                        "rows": [
+                            {
+                                "rowId": str(count + 1),
+                                "alcCode": journal[count]["alcCode"],
+                                "apCode": journal[count]["apCode"].__str__(),
+                                "volume": journal[count]["volume"].__str__(),
+                                "quantity": int(journal[count]["quantity"]),
+                                "price": int(journal[count]["price"]),
+                                "rowType": "New",
+                            }
+                            for count in range(len(journal))
+                        ],
+                    },
+                    "writeAutoRows": False,
+                }
+
+                #  TODO: При записи журнала в сервисе не пишутся сумма списаний за день и общее количество списываемой
+                #   продукции. Надо разобраться
+                url_sales_write: KonturMarketUrl = get_url(UrlType.EGAIS_SALES_JOURNAL_WRITE)
+                response = self._session.post(url=url_sales_write.url, json=journal_json)
+                if response.ok:
+                    return True
+        return False
