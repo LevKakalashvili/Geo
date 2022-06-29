@@ -1,4 +1,6 @@
 """Команда запуска синхронизации с МойСклад, КонтурМаркет, GoogleSheets."""
+import datetime
+import sys
 from typing import Any, Dict, Tuple
 
 from django.core.management.base import BaseCommand, CommandParser
@@ -18,15 +20,18 @@ class Command(BaseCommand):  # noqa: D101
             "--moysklad_assortment",
             action="store_true",
             default=False,
-            help="Запустить синхронизацию ассортимента из МойСклад",
+            help="Запустить синхронизацию ассортимента из МойСклад.",
         )
 
         parser.add_argument(
             "-mrd",
             "--moysklad_retaildemand",
-            action="store_true",
+            type=lambda date_: datetime.datetime.strptime(date_, "%Y-%m-%d").date(),
+            nargs='?',
+            # Значение даты по умолчанию
+            const=datetime.datetime.today().strftime('%Y-%m-%d'),
             default=False,
-            help="Запустить импорт товаров, проданных за текущий день",
+            help="Запустить импорт товаров, проданных за указанную дату. Если не указывать, по умолчанию - today.",
         )
 
         parser.add_argument(
@@ -34,7 +39,7 @@ class Command(BaseCommand):  # noqa: D101
             "--konturmarket_assortment",
             action="store_true",
             default=False,
-            help="Запустить синхронизацию товаров из Контур.Маркет",
+            help="Запустить синхронизацию товаров из Контур.Маркет.",
         )
 
         parser.add_argument(
@@ -42,7 +47,7 @@ class Command(BaseCommand):  # noqa: D101
             "--google_compl_table",
             action="store_true",
             default=False,
-            help="Запустить синхронизацию таблицы соответствия из GoogleSheets",
+            help="Запустить синхронизацию таблицы соответствия из GoogleSheets.",
         )
 
     def handle(self, *args: Tuple[str], **kwargs: Dict[str, Any]) -> None:  # noqa: D102
@@ -59,12 +64,19 @@ class Command(BaseCommand):  # noqa: D101
 
             if not ms.sync_assortment():
                 self.stdout.write(self.style.ERROR("Ошибка. Не удалось получить данные из сервиса МойСклад."))
+            else:
+                self.stdout.write(self.style.SUCCESS("ОК. МойСклад синхронизация товаров."))
 
         # Импорт товаров, проданных за смену
         if moysklad_retaildemand:
-
-            if not ms.sync_retail_demand():
-                self.stdout.write(self.style.ERROR("Ошибка. Не удалось товары, проданные за смену из сервиса МойСклад."))
+            if not ms.sync_retail_demand(date_=moysklad_retaildemand):
+                self.stdout.write(
+                    self.style.ERROR("Ошибка. Не удалось получить товары, проданные за смену из сервиса МойСклад.")
+                )
+            else:
+                self.stdout.write(
+                    self.style.SUCCESS(f"ОК. МойСклад розничные продажи за {moysklad_retaildemand.__str__()}.")
+                )
 
         # Синхронизация КонтурМаркет
         if konturmarket_assortment:
@@ -72,6 +84,8 @@ class Command(BaseCommand):  # noqa: D101
 
             if not km.sync_assortment():
                 self.stdout.write(self.style.ERROR("Ошибка. Не удалось получить данные из сервиса Конур.Маркет."))
+            else:
+                self.stdout.write(self.style.SUCCESS("ОК. Контур.Маркет синхронизация товаров."))
 
         # Синхронизация GoogleSheets
         if google_compl_table:
@@ -79,3 +93,5 @@ class Command(BaseCommand):  # noqa: D101
 
             if not gs.sync_compl_table():
                 self.stdout.write(self.style.ERROR("Ошибка. Не удалось создать таблицу соответствий."))
+            else:
+                self.stdout.write(self.style.SUCCESS("ОК. GoogleSheets таблица соответствий."))
