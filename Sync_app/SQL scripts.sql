@@ -116,5 +116,22 @@ where sam.is_draft;
 SELECT sam.full_name, sam2.quantity, sam2.demand_date 
 FROM geo.Sync_app_moyskladdbgood sam, geo.Sync_app_moyskladdbretaildemand sam2 
 WHERE sam.uuid = sam2.uuid
-ORDER by full_name 
+ORDER by full_name;
+
+-- Посмотреть остатки по товару, через ЕГАИС код
+SELECT egais_code_id , quantity  
+FROM geo.Sync_app_konturmarketdbstock sak 
+WHERE egais_code_id
+IN (
+	'0000000000039190900',
+	'0000000000036902642',
+	'0000000000033538592',
+	'0000000000031239554',
+	'0000000000040233242',
+	'0000000000030747643',
+	'0000000000030770129'
+	);
+
+
+
 
