@@ -128,31 +128,35 @@ class KonturMarket:
 
     def create_sales_journal(self, date_: datetime.date) -> bool:
         """Создание журнала розничных продаж в системе ЕГАИС."""
-        if self.login():
-            url_sales_read: KonturMarketUrl = get_url(UrlType.EGAIS_SALES_JOURNAL_READ)
-            response = self._session.get(
-                url=url_sales_read.url,
-                params={
-                    "date": date_.__str__(),
-                },
-            )
-            # Если получили ответ  журнал не содержит записи
-            if response.ok and not response.json().get("day", []).get("rows", []):
-                journal = km_models.KonturMarketDBGood.get_sales_journal_from_db(date_=date_)
+        if not self.login():
+            return False
+
+        url_sales_read: KonturMarketUrl = get_url(UrlType.EGAIS_SALES_JOURNAL_READ)
+        response = self._session.get(
+            url=url_sales_read.url,
+            params={
+                "date": str(date_),
+            },
+        )
+
+        # Если получили ответ журнал не содержит записи
+        if response.ok and not response.json().get("day", {}).get("rows", {}):
+            journals = km_models.KonturMarketDBGood.get_sales_journal_from_db(date_=date_)
+            if journals:
                 journal_json = {
                     "day": {
-                        "day": date_.__str__(),
+                        "day": str(date_),
                         "rows": [
                             {
                                 "rowId": str(count + 1),
-                                "alcCode": journal[count]["alcCode"],
-                                "apCode": journal[count]["apCode"].__str__(),
-                                "volume": journal[count]["volume"].__str__(),
-                                "quantity": int(journal[count]["quantity"]),
-                                "price": int(journal[count]["price"]),
+                                "alcCode": journal["alcCode"],
+                                "apCode": str(journal["apCode"]),
+                                "volume": str(journal["volume"]),
+                                "quantity": int(journal["quantity"]),
+                                "price": int(journal["price"]),
                                 "rowType": "New",
                             }
-                            for count in range(len(journal))
+                            for count, journal in enumerate(journals)
                         ],
                     },
                     "writeAutoRows": False,

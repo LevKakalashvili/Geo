@@ -379,13 +379,11 @@ class MoySklad:
         """Метод удаляет количество товара из списка returned_goods, в списке sold_goods."""
         sold_goods_dict = {good.good_id: good for good in sold_goods}
         for ret in returned_goods:
-            if sold_goods_dict.get(ret.good_id):
-                if sold_goods_dict[ret.good_id].quantity - ret.quantity < 1:
+            if sold_goods := sold_goods_dict.get(ret.good_id):
+                if sold_goods.quantity - ret.quantity < 1:
                     del sold_goods_dict[ret.good_id]
                 else:
-                    sold_goods_dict[ret.good_id] = sold_goods_dict[ret.good_id]._replace(
-                        quantity=(sold_goods_dict[ret.good_id].quantity - ret.quantity),
-                    )
+                    sold_goods_dict[ret.good_id] = sold_goods._replace(quantity=(sold_goods.quantity - ret.quantity))
         return list(sold_goods_dict.values())
 
     def set_token(self, request_new: bool = True) -> bool:
@@ -534,8 +532,8 @@ class MoySklad:
 
     def get_retail_sales_return_by_period(
         self,
-        start_period: Optional[datetime.date],
-        end_period: Optional[datetime.date],
+        start_period: Optional[datetime.date] = None,
+        end_period: Optional[datetime.date] = None,
     ) -> List[RetailReturnedPosition]:
         """Метод возвращает список, возвращенных товаров за период.
 
@@ -554,7 +552,7 @@ class MoySklad:
                     goods[position.good.good_id] = RetailReturnedPosition(
                         good_id=position.good.good_id,
                         quantity=int(position.quantity),
-                        demand_date=RetailDemand(**retail_returns).created.strftime("%Y-%m-%d"),
+                        demand_date=RetailDemand(**retail_returns).created.isoformat(),
                     )
                 else:
                     goods[position.good.good_id] = goods[position.good.good_id]._replace(
@@ -591,6 +589,6 @@ class MoySklad:
         if not response.ok:
             return []
 
-        rows: List[Dict[str, Any]] = response.json().get("rows")
+        rows: List[Dict[str, Any]] | None = response.json().get("rows")
 
         return rows

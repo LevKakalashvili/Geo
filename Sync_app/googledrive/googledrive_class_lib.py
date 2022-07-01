@@ -62,7 +62,7 @@ class GoogleSheets:
             return []
 
         not_proceeded_good = []
-        ms_db_good: QuerySet | list[QuerySet]
+        ms_db_good: QuerySet
         km_db_good: km_model.KonturMarketDBGood
 
         for gs_row in googlesheets_copm_table:
@@ -93,8 +93,7 @@ class GoogleSheets:
                 # Если в выборке из таблицы товаров для МойСклад нашлось товаров больше одного
                 elif len(ms_db_good) >= 2:
                     # Фильтруем по объему
-                    ms_db_good = [good for good in ms_db_good if good.capacity == km_db_good.capacity]
-
+                    ms_db_good = ms_db_good.filter(capacity__exact=km_db_good.capacity)
                     # Если опять нашлось более одного товара, исключаем запись из обработки
                     if len(ms_db_good):
                         # Если нашлись совпадения

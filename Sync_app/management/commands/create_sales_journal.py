@@ -1,5 +1,6 @@
 """Команда запуска синхронизации с МойСклад, КонтурМаркет, GoogleSheets."""
 import datetime
+import sys
 
 from django.core.management.base import BaseCommand
 
@@ -12,19 +13,18 @@ class Command(BaseCommand):  # noqa: D101
     def add_arguments(self, parser):
         parser.add_argument(
             "date",
-            type=lambda date_: datetime.datetime.strptime(date_, "%Y-%m-%d").date(),
+            type=datetime.date.fromisoformat,
             nargs='?',
-            default=datetime.datetime.today().strftime('%Y-%m-%d'),
+            default=datetime.date.today().isoformat(),
             help="Создать журнал за выбранную дату. Если не указывать, по умолчанию - today.",
         )
 
     def handle(self, *args, **kwargs):
         journal_date = kwargs["date"]
 
-        if journal_date:
-            km: km_class.KonturMarket = km_class.KonturMarket()
+        km: km_class.KonturMarket = km_class.KonturMarket()
 
-            if not km.create_sales_journal(date_=journal_date):
-                self.stdout.write(self.style.ERROR("Ошибка. Не удалось создать журнал продаж в сервисе Конур.Маркет."))
-            else:
-                self.stdout.write(self.style.SUCCESS(f"ОК. Контур.Маркет журнал продаж {journal_date.__str__()}."))
+        if km.create_sales_journal(date_=journal_date):
+            self.stdout.write(self.style.SUCCESS(f"ОК. Контур.Маркет журнал продаж {str(journal_date)}."))
+        else:
+            self.stdout.write(self.style.ERROR("Ошибка. Не удалось создать журнал продаж в сервисе Конур.Маркет."))

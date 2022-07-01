@@ -10,6 +10,7 @@ from django.db import models
 from Sync_app.models.moysklad_models import (
     MoySkladDBGood, MoySkladDBRetailDemand,
 )
+from Sync_app.moysklad.moysklad_constants import GoodType
 
 if TYPE_CHECKING:
     import Sync_app.konturmarket.konturmarket_class_lib as km_class
@@ -134,6 +135,7 @@ class KonturMarketDBGood(models.Model):
     def get_sales_journal_from_db(date_: datetime.date) -> List[Dict[str, Union[str, int]]]:
         """Метод для получения журнала розничных продаж алкоголя из БД."""
         sales: List[Dict[str, Union[str, int]]] = []
+        # TODO: Переделать запросы в цикле на select_related/prefetch_related
         # Получаем uuid из продаж
         for retail_demand in MoySkladDBRetailDemand.objects.filter(demand_date=date_):
             ms_good = MoySkladDBGood.objects.get(uuid=retail_demand.uuid_id)
@@ -148,7 +150,11 @@ class KonturMarketDBGood(models.Model):
 
             # Получаем все объекты ЕГАИС связанные текущим товаром МойСклад
             for km_good in KonturMarketDBGood.objects.filter(
-                goods__uuid__exact=retail_demand.uuid_id, goods__is_draft=False,
+                goods__uuid__exact=retail_demand.uuid_id,
+                goods__is_draft=False,
+            # Исключаем комбуча, лиманды и прочее
+            ).exclude(
+                goods__bev_type__in=[GoodType.KOMBUCHA, GoodType.OTHER, GoodType.LEMONADE]
             ):
                 # Проверяем товар по таблице остатков ЕГАИС
                 # Если не удалось найти товар с таким ЕГАИС кодом и положительным остатком
