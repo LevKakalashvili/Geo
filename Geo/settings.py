@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-from Sync_app.privatedata import mysql_privatedata, django_privatedata
+from Sync_app.privatedata import postgres_privatedata, django_privatedata
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -58,8 +58,7 @@ ROOT_URLCONF = 'Geo.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates']
-        ,
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -79,13 +78,22 @@ WSGI_APPLICATION = 'Geo.wsgi.application'
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
 DATABASES = {
+    # 'default': {
+    #         'ENGINE': 'django.db.backends.mysql',
+    #         'NAME': 'geo',
+    #         'USER': mysql_privatedata.USER,
+    #         'PASSWORD': mysql_privatedata.PASSWORD,
+    #         },
+    #     }
     'default': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'geo',
-            'USER': mysql_privatedata.USER,
-            'PASSWORD': mysql_privatedata.PASSWORD,
-            },
-        }
+                'ENGINE': 'django.db.backends.postgresql_psycopg2',
+                'NAME': 'geo_db',
+                'USER': postgres_privatedata.USER,
+                'PASSWORD': postgres_privatedata.PASSWORD,
+                'HOST': 'localhost',
+                'PORT': '',
+                },
+            }
 
 
 # Password validation
