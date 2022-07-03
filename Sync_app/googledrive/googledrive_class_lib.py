@@ -81,7 +81,7 @@ class GoogleSheets:
                 # 2.1 Barista Chocolate Quad
 
                 # Вариант 2:
-                ms_db_good = ms_model.MoySkladDBGood.objects.filter(name=gs_good.name).filter(is_draft=False)
+                ms_db_good = ms_model.MoySkladDBGood.objects.filter(name__iexact=gs_good.name).filter(is_draft=False)
                 if gs_good.brewery:
                     # Вариант 1:
                     ms_db_good = ms_db_good.filter(brewery=gs_good.brewery)
