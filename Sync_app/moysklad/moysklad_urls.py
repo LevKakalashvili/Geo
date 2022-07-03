@@ -1,12 +1,15 @@
 """В модуле хранятся url'ы и функции, для доступа в сервис MoySklad https://www.moysklad.ru/ по API."""
 
 import base64
+import os
 from datetime import date
 from enum import Enum
 from typing import Any, Dict, NamedTuple, Optional
 from urllib.parse import urljoin
 
-import Sync_app.privatedata.moysklad_privatedata as ms_pvdata
+from dotenv import load_dotenv
+
+load_dotenv()
 
 JSON_URL = "https://online.moysklad.ru/api/remap/1.2/"  # ссылка для подключения к МС по JSON API 1.2
 BEER_FOLDER_ID = "8352f575-b4c1-11e7-7a34-5acf0009a77f"  # id папки "Пиво"
@@ -52,7 +55,7 @@ def get_headers(token: str = "") -> Dict[str, Any]:
             "Authorization": "Bearer " + token,
         }
     else:
-        credentials = f"{ms_pvdata.USER}:{ms_pvdata.PASSWORD}"
+        credentials = f"{os.getenv('MOYSKLAD_USER')}:{os.getenv('MOYSKLAD_PASSWORD')}"
         headers = {"Authorization": f"Basic {base64.b64encode(credentials.encode()).decode('utf-8')}"}
     return headers
 

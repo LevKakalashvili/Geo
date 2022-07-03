@@ -1,5 +1,6 @@
 """В модуле хранятся описание классов."""
 import datetime
+import os
 import re
 from dataclasses import dataclass
 from typing import Any, Dict, List, NamedTuple, Optional, Union
@@ -9,10 +10,12 @@ from pydantic import BaseModel, Field
 
 import Sync_app.models.moysklad_models as ms_model
 import Sync_app.moysklad.moysklad_urls as ms_urls
-import Sync_app.privatedata.moysklad_privatedata as ms_pvdata
+from dotenv import load_dotenv
 from Sync_app.moysklad.moysklad_constants import (
     _MODIFICATION_SET, _TRASH, Characteristics, GoodType,
 )
+
+load_dotenv()
 
 
 class RetailDemandPosition(NamedTuple):
@@ -416,7 +419,7 @@ class MoySklad:
             else:
                 return False
         else:
-            self._token = ms_pvdata.TOKEN
+            self._token = os.getenv("MOYSKLAD_TOKEN")
         return True
 
     def get_assortment(self) -> List[Good]:

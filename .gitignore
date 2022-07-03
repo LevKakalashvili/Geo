@@ -51,3 +51,4 @@ pyvenv.cfg
 /Sync_app/privatedata/
 /venv/
 __pycache__
+/.env

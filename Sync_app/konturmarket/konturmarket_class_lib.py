@@ -1,17 +1,21 @@
 """В модуле описаны классы для работы с сервисом Контур.Маркет https://market.kontur.ru/."""
 import datetime
 import json
+import os
 from dataclasses import dataclass
 from typing import List, Optional, Tuple
 
 import requests
 from pydantic import BaseModel, Field
 
+from dotenv import load_dotenv
+
 import Sync_app.models.konturmarket_models as km_models
-import Sync_app.privatedata.kontrurmarket_privatedata as km_pvdata
 from Sync_app.konturmarket.konturmarket_urls import (
     KonturMarketUrl, UrlType, get_url,
 )
+
+load_dotenv()
 
 
 class Brewery(BaseModel):
@@ -101,8 +105,8 @@ class KonturMarket:
     def login(self) -> bool:
         """Метод для логина в сервисе Контур.Маркет."""
         auth_data = {
-            "Login": km_pvdata.USER,
-            "Password": km_pvdata.PASSWORD,
+            "Login": os.getenv("KONTUR_USER"),
+            "Password": os.getenv("KONTUR_PASSWORD"),
             "Remember": False,
         }
         # Пытаемся залогиниться на сайте
