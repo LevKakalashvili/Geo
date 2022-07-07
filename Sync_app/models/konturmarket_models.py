@@ -178,8 +178,9 @@ class KonturMarketDBGood(models.Model):
                 # Если остаток ЕГАИС больше или равен количеству проданного товара
                 if km_stock.quantity >= retail_demand.quantity:
                     quantity = retail_demand.quantity
-                    retail_demand.quantity -= quantity
+                    retail_demand.quantity -= 0
                 else:
+                    quantity = km_stock.quantity
                     retail_demand.quantity -= km_stock.quantity
 
                 sales.append(
