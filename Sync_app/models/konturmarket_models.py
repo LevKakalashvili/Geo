@@ -137,7 +137,7 @@ class KonturMarketDBGood(models.Model):
         sales: List[Dict[str, Union[str, int]]] = []
         # TODO: Переделать запросы в цикле на select_related/prefetch_related
         # Получаем uuid из продаж
-        for retail_demand in MoySkladDBRetailDemand.objects.filter(demand_date=date_):
+        for retail_demand in MoySkladDBRetailDemand.objects.filter(demand_date=date_).only("uuid_id", "quantity"):
             ms_good = MoySkladDBGood.objects.get(uuid=retail_demand.uuid_id)
 
             # Если к коммерческому товару привязано несколько товаров ЕГАИС, и остаток всех товаров ЕГАИС не нулевое
@@ -149,13 +149,15 @@ class KonturMarketDBGood(models.Model):
             # элемент ЕГАИС в список для списания, уменьшить количество проданного товара и перейти к следующему элементу ЕГАИС
 
             # Получаем все объекты ЕГАИС связанные текущим товаром МойСклад
-            for km_good in KonturMarketDBGood.objects.filter(
+            km_goods = KonturMarketDBGood.objects.filter(
                 goods__uuid__exact=retail_demand.uuid_id,
                 goods__is_draft=False,
             # Исключаем комбуча, лиманды и прочее
             ).exclude(
                 goods__bev_type__in=[GoodType.KOMBUCHA, GoodType.OTHER, GoodType.LEMONADE]
-            ):
+            ).only("full_name", "egais_code", "kind_code", "capacity")
+
+            for km_good in km_goods:
                 # Проверяем товар по таблице остатков ЕГАИС
                 # Если не удалось найти товар с таким ЕГАИС кодом и положительным остатком
                 # пропускаем товар
@@ -187,7 +189,7 @@ class KonturMarketDBGood(models.Model):
                         "alcCode": km_good.egais_code,
                         "apCode": km_good.kind_code,
                         "volume": km_good.capacity,
-                        # если в БД остаток товара меньшие реально проданного, то списываем товар под ноль
+                        # если в БД остаток товара меньше реально проданного, то списываем товар под ноль
                         "quantity": quantity,
                         "price": ms_good.price,
                     },

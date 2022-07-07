@@ -1,6 +1,6 @@
 from django.urls import path
-from Sync_app.views import egais
+from . import views
 
 urlpatterns = [
-    path("<egais>", egais),
+    path("<page_name>", views.get_page),
 ]

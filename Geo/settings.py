@@ -42,8 +42,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_comment_migrate',
-    'Sync_app',
     "debug_toolbar",
+    'django_extensions',
+    'Sync_app',
 ]
 
 MIDDLEWARE = [

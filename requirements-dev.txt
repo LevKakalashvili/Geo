@@ -31,4 +31,5 @@ autopep8
 # https://black.readthedocs.io/en/stable/integrations/editors.html
 black
 types-requests
+django-extensions
 django-debug-toolbar
