@@ -168,6 +168,7 @@ class MoySkladDBRetailDemand(models.Model):
         help_text="Идентификатор проданного товара",
         on_delete=models.DO_NOTHING,
         db_column="uuid",
+        related_name="goods_related",
     )
 
     @staticmethod
