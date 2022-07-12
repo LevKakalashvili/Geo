@@ -1,7 +1,9 @@
 from django.urls import path
+
+import Sync_app.views
 from . import views
 
 urlpatterns = [
-    path("", views.get_sales_journal_from_db),
+    path("", Sync_app.views.EgaisView.as_view()),
     # path("<page_name>", views.get_page),
 ]
