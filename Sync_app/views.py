@@ -15,8 +15,29 @@ from Sync_app.models.moysklad_models import (
 )
 from Sync_app.moysklad.moysklad_constants import GoodType
 
-
 def get_sales_journal_from_db(request):
+    sales = []
+
+    date_ = datetime.date.today() - datetime.timedelta(days=2)
+    # TODO: Переделать запросы в цикле на select_related/prefetch_related
+    # Получаем uuid из продаж
+    goods = MoySkladDBRetailDemand.objects\
+        .select_related()\
+        .filter(demand_date=date_)\
+        .prefetch_related("uuid__egais_code")\
+        .filter(uuid__is_draft=False)\
+        .exclude(uuid__bev_type__in=[GoodType.KOMBUCHA, GoodType.OTHER, GoodType.LEMONADE])\
+        .prefetch_related("uuid__egais_code__km_db_stock_good")
+
+    return render(
+        request=request,
+        template_name="Sync_app/egais.html",
+        context={
+            "sales": sales,
+        }
+    )
+
+def get_sales_journal_from_db1(request):
     """Метод для получения журнала розничных продаж алкоголя из БД."""
     sales: List[Dict[str, Union[str, int]]] = []
     date_ = datetime.date.today() - datetime.timedelta(days=1)

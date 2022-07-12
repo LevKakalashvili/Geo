@@ -88,7 +88,7 @@ class MoySkladDBGood(models.Model):
     capacity = models.DecimalField(max_digits=5, decimal_places=3, help_text="Емкость тары")
     # Код ЕГАИС
     egais_code = models.ManyToManyField(
-        "KonturMarketDBGood", help_text="Код алкогольной продукции", related_name="goods",
+        "KonturMarketDBGood", help_text="Код алкогольной продукции", related_name="ms_db_good",
     )
 
     @staticmethod
@@ -168,7 +168,7 @@ class MoySkladDBRetailDemand(models.Model):
         help_text="Идентификатор проданного товара",
         on_delete=models.DO_NOTHING,
         db_column="uuid",
-        related_name="goods_related",
+        related_name="ms_retaildemand_good",
     )
 
     @staticmethod
