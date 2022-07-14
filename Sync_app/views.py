@@ -13,21 +13,31 @@ from Sync_app.moysklad.moysklad_constants import GoodType
 
 from django.views.generic import TemplateView
 
+
 class EgaisView(TemplateView):
     template_name = "Sync_app/egais.html"
 
     def get(self, request):
         sales = []
 
-        date_ = datetime.date.today() - datetime.timedelta(days=2)
-        # Получаем uuid из продаж
-        goods = MoySkladDBRetailDemand.objects \
-            .select_related() \
-            .filter(demand_date=date_) \
-            .prefetch_related("uuid__egais_code") \
+        date_ = datetime.date.today() - datetime.timedelta(days=4)
+        all_sold_goods = MoySkladDBRetailDemand.objects \
+            .select_related("uuid") \
             .filter(uuid__is_draft=False) \
-            .exclude(uuid__bev_type__in=[GoodType.KOMBUCHA, GoodType.OTHER, GoodType.LEMONADE]) \
-            .prefetch_related("uuid__egais_code__km_db_stock_good")
+            .exclude(uuid__bev_type__in=[GoodType.KOMBUCHA, GoodType.OTHER, GoodType.LEMONADE])\
+            .prefetch_related("uuid__egais_code")\
+            .prefetch_related("uuid__egais_code__konturmarketdbstock")\
+            .filter(uuid__egais_code__konturmarketdbstock__quantity__gt=0)
+
+        # all_km_goods = KonturMarketDBGood.objects.all(). \
+        #     filter()
+
+        for sold_good in all_sold_goods:
+            a = sold_good.uuid.egais_code.all().__len__()
+            if a > 1:
+                b = 2
+            #     list(sold_good.uuid.egais_code.all())[1].konturmarketdbstock.quantity
+            # pass
 
         return render(
             request=request,
