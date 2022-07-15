@@ -33,3 +33,4 @@ black
 types-requests
 django-extensions
 django-debug-toolbar
+pretty-errors
