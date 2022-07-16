@@ -197,4 +197,5 @@ class KonturMarketDBStock(models.Model):
         on_delete=models.CASCADE,
         primary_key=True,
         help_text="Код алкогольной продукции (код АП) в ЕГАИС",
+        db_column="egais_code",
     )

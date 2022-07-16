@@ -150,6 +150,7 @@ class MoySkladDBStock(models.Model):
         on_delete=models.CASCADE,
         primary_key=True,
         help_text="Уникальный идентификатор товара",
+        db_column="uuid",
     )
 
 
