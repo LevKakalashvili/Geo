@@ -134,67 +134,8 @@ class KonturMarketDBGood(models.Model):
     @staticmethod
     def get_sales_journal_from_db(date_: datetime.date) -> List[Dict[str, Union[str, int]]]:
         """Метод для получения журнала розничных продаж алкоголя из БД."""
-        sales: List[Dict[str, Union[str, int]]] = []
-        # TODO: Переделать запросы в цикле на select_related/prefetch_related
-        # Получаем uuid из продаж
-        for retail_demand in MoySkladDBRetailDemand.objects.filter(demand_date=date_).only("uuid_id", "quantity"):
-            ms_good = MoySkladDBGood.objects.get(uuid=retail_demand.uuid_id)
 
-            # Если к коммерческому товару привязано несколько товаров ЕГАИС, и остаток всех товаров ЕГАИС не нулевое
-            # то, KonturMarketDBGood.objects.filter(goods__uuid__exact=retail_demand.uuid_id, goods__is_draft=False)
-            # вернет список длиной больше 1
-            # Нужно проверить, если количество проданного товара, меньше либо равно остатку текущего остатка ЕГАИС,
-            # то списываем и брейком выходим из цикла
-            # Если количество проданного товара, больше, чем остаток текущего элемента ЕГАИС, то нужно добавить текущий
-            # элемент ЕГАИС в список для списания, уменьшить количество проданного товара и перейти к следующему элементу ЕГАИС
 
-            # Получаем все объекты ЕГАИС связанные текущим товаром МойСклад
-            km_goods = KonturMarketDBGood.objects.filter(
-                goods__uuid__exact=retail_demand.uuid_id,
-                goods__is_draft=False,
-            # Исключаем комбуча, лиманды и прочее
-            ).exclude(
-                goods__bev_type__in=[GoodType.KOMBUCHA, GoodType.OTHER, GoodType.LEMONADE]
-            ).only("full_name", "egais_code", "kind_code", "capacity")
-
-            for km_good in km_goods:
-                # Проверяем товар по таблице остатков ЕГАИС
-                # Если не удалось найти товар с таким ЕГАИС кодом и положительным остатком
-                # пропускаем товар
-                try:
-                    km_stock = KonturMarketDBStock.objects.get(egais_code__exact=km_good.egais_code, quantity__gt=0)
-                except ObjectDoesNotExist:
-                    # TODO: переделать на логгер
-                    sys.stdout.write(
-                        f"Предупреждение. Не удалось получить ЕГАИС остаток для кода: {km_good.egais_code}, товара: {ms_good.full_name}.\n",
-                    )
-                    continue
-
-                # Если списали все количество за раз, выходим из цикла. Списали все, что нужно
-                if retail_demand.quantity == 0:
-                    break
-
-                quantity: int = 0
-                # Если остаток ЕГАИС больше или равен количеству проданного товара
-                if km_stock.quantity >= retail_demand.quantity:
-                    quantity = retail_demand.quantity
-                    retail_demand.quantity -= 0
-                else:
-                    quantity = km_stock.quantity
-                    retail_demand.quantity -= km_stock.quantity
-
-                sales.append(
-                    {
-                        "commercial_name": ms_good.full_name,
-                        "name": km_good.full_name,
-                        "alcCode": km_good.egais_code,
-                        "apCode": km_good.kind_code,
-                        "volume": km_good.capacity,
-                        # если в БД остаток товара меньше реально проданного, то списываем товар под ноль
-                        "quantity": quantity,
-                        "price": ms_good.price,
-                    },
-                )
 
         sales = sorted(sales, key=itemgetter("commercial_name"))
         return sales
