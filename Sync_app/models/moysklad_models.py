@@ -17,6 +17,8 @@ class MoySkladDBGood(models.Model):
 
     class Meta:
         """Индексы и ограничения для таблицы."""
+        verbose_name = "Товар (Мой Склад)"
+        verbose_name_plural = "Товары (Мой Склад)"
 
         indexes = [
             models.Index(
@@ -137,6 +139,9 @@ class MoySkladDBGood(models.Model):
                 # TODO: переделать на логгер или Sentry
                 print(f"\nWARNING! {error.args[1]}")
         return True
+
+    def __str__(self):
+        return f'{self.brewery} - {self.name}'
 
 
 class MoySkladDBStock(models.Model):

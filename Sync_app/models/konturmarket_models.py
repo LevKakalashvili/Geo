@@ -43,6 +43,10 @@ class KonturMarketDBGood(models.Model):
     """Класс описывает модель для работы с товарами из сервиса МойСклад."""
 
     class Meta:
+
+        verbose_name = "Товар (Контур.Маркет)"
+        verbose_name_plural = "Товары (Контур.Маркет)"
+
         """Индексы."""
 
         indexes = [
