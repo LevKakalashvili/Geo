@@ -17,8 +17,8 @@ class MoySkladDBGood(models.Model):
 
     class Meta:
         """Индексы и ограничения для таблицы."""
-        verbose_name = "Товар (Мой Склад)"
-        verbose_name_plural = "Товары (Мой Склад)"
+        verbose_name = "МойСклад. Наименование товара"
+        verbose_name_plural = "МойСклад. Наименование товаров"
 
         indexes = [
             models.Index(

@@ -4,7 +4,11 @@ from Sync_app.models import MoySkladDBGood, KonturMarketDBGood
 
 
 class MoySkladDBGoodAdmin(admin.ModelAdmin):
-    pass
+    list_display = ("brewery", "name", "style")
+
+    @admin.display(ordering="brewery")
+    def oder_by_brewery_name(self):
+        pass
 
 
 class KonturMarketDBGoodAdmin(admin.ModelAdmin):
