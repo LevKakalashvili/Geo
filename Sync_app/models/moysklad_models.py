@@ -67,9 +67,9 @@ class MoySkladDBGood(models.Model):
     # Цена товара
     price = models.DecimalField(max_digits=5, decimal_places=2, help_text="Цена товара")
     # Наименование пивоварни
-    brewery = models.CharField(max_length=100, help_text="Наименование пивоварни")
+    brewery = models.CharField(max_length=100, help_text="Наименование пивоварни", verbose_name="Пивоварня")
     # Наименование пива
-    name = models.CharField(max_length=100, help_text="Наименование товара")
+    name = models.CharField(max_length=100, help_text="Наименование товара", verbose_name="Наименование")
     # Содержание алкоголя
     abv = models.FloatField(help_text="Содержание алкоголя")
     # Плотность
@@ -77,9 +77,9 @@ class MoySkladDBGood(models.Model):
     # Горечь
     ibu = models.PositiveSmallIntegerField(help_text="Горечь")
     # Признак алкогольной продукции
-    is_alco = models.BooleanField(help_text="Признак алкогольного напитка", default=False)
+    is_alco = models.BooleanField(help_text="Признак алкогольного напитка", default=False, verbose_name="Алкогольная продукция")
     # Признак разливного пива
-    is_draft = models.BooleanField(help_text="Признак разливного пива", default=False)
+    is_draft = models.BooleanField(help_text="Признак разливного пива", default=False, verbose_name="Розив")
     # Тип продукта (пиво, сидр, медовуха, комбуча, лимонад)
     bev_type = models.CharField(
         max_length=8,
@@ -87,7 +87,7 @@ class MoySkladDBGood(models.Model):
         help_text="Тип продукта",
     )
     # Емкость тары
-    capacity = models.DecimalField(max_digits=5, decimal_places=3, help_text="Емкость тары")
+    capacity = models.DecimalField(max_digits=5, decimal_places=3, help_text="Емкость тары", verbose_name="Объём")
     # Код ЕГАИС
     egais_code = models.ManyToManyField(
         "KonturMarketDBGood", help_text="Код алкогольной продукции", related_name="goods",
