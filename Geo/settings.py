@@ -43,7 +43,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_comment_migrate',
     "debug_toolbar",
-    'django_extensions',
     'Sync_app',
 ]
 
