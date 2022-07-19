@@ -285,6 +285,8 @@ class Good(BaseModel):
                 bev_type = GoodType.MEAD
             elif "".join(GoodType.KOMBUCHA.value) in add_info.lower():
                 bev_type = GoodType.KOMBUCHA
+            elif "".join(GoodType.LEMONADE.value) in add_info.lower():
+                bev_type = GoodType.LEMONADE
             else:
                 bev_type = GoodType.BEER
         return "".join(bev_type.value)
