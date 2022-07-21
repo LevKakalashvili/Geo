@@ -26,12 +26,12 @@ _MODIFICATION_SET: Dict[str, float] = {
 class GoodType(Enum):
     """Перечисление типов товаров."""
 
-    BEER = ("beer",)
-    CIDER = ("cider",)
-    KOMBUCHA = ("kombucha",)
-    LEMONADE = ("lemonade",)
-    MEAD = ("mead",)
-    OTHER = ("other",)
+    BEER = ("beer", "Пиво")
+    CIDER = ("cider", "Сидр")
+    KOMBUCHA = ("kombucha", "Комбуча")
+    LEMONADE = ("lemonade", "Лимонад")
+    MEAD = ("mead", "Медовуха")
+    OTHER = ("other", "Другое")
 
 
 class AlcoType(Enum):

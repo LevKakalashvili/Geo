@@ -17,6 +17,7 @@ class MoySkladDBGood(models.Model):
 
     class Meta:
         """Индексы и ограничения для таблицы."""
+
         verbose_name = "МойСклад. Наименование товара"
         verbose_name_plural = "МойСклад. Наименование товаров"
 
@@ -59,38 +60,43 @@ class MoySkladDBGood(models.Model):
     )
     # Полное наименование товара.
     # Использовать нужно только для связки данных из КонтурМаркет
-    full_name = models.CharField(max_length=200, unique=True, help_text="Полное имя товара")
+    full_name = models.CharField(max_length=200, unique=True, help_text="Полное имя товара", verbose_name="ПОлное наименование")
     # Путь, папка
     path_name = models.CharField(max_length=100, help_text="Папка товара")
     # Стиль
-    style = models.CharField(max_length=100, help_text="Стиль пива, если товар - пиво")
+    style = models.CharField(max_length=100, help_text="Стиль пива, если товар - пиво", verbose_name="Стиль")
     # Цена товара
-    price = models.DecimalField(max_digits=5, decimal_places=2, help_text="Цена товара")
+    price = models.DecimalField(max_digits=5, decimal_places=2, help_text="Цена товара", verbose_name="Цена")
     # Наименование пивоварни
     brewery = models.CharField(max_length=100, help_text="Наименование пивоварни", verbose_name="Пивоварня")
     # Наименование пива
     name = models.CharField(max_length=100, help_text="Наименование товара", verbose_name="Наименование")
     # Содержание алкоголя
-    abv = models.FloatField(help_text="Содержание алкоголя")
+    abv = models.FloatField(help_text="Содержание алкоголя", verbose_name="Алкоголь")
     # Плотность
-    og = models.FloatField(help_text="Начальная плотность")
+    og = models.FloatField(help_text="Начальная плотность", verbose_name="Плотность")
     # Горечь
-    ibu = models.PositiveSmallIntegerField(help_text="Горечь")
+    ibu = models.PositiveSmallIntegerField(help_text="Горечь", verbose_name="Горечь")
     # Признак алкогольной продукции
     is_alco = models.BooleanField(help_text="Признак алкогольного напитка", default=False, verbose_name="Алкогольная продукция")
     # Признак разливного пива
-    is_draft = models.BooleanField(help_text="Признак разливного пива", default=False, verbose_name="Розив")
+    is_draft = models.BooleanField(help_text="Признак разливного пива", default=False, verbose_name="Розлив")
     # Тип продукта (пиво, сидр, медовуха, комбуча, лимонад)
     bev_type = models.CharField(
         max_length=8,
-        choices=[("".join(element.value), "".join(element.value)) for element in ms_const.GoodType],
+        # choices=[("".join(element.value), "".join(element.value)) for element in ms_const.GoodType],
+        choices=[element.value for element in ms_const.GoodType],
         help_text="Тип продукта",
+        verbose_name="Тип",
     )
     # Емкость тары
     capacity = models.DecimalField(max_digits=5, decimal_places=3, help_text="Емкость тары", verbose_name="Объём")
     # Код ЕГАИС
     egais_code = models.ManyToManyField(
-        "KonturMarketDBGood", help_text="Код алкогольной продукции", related_name="goods",
+        "KonturMarketDBGood",
+        help_text="Код алкогольной продукции",
+        related_name="goods",
+        verbose_name="ЕГАИС код",
     )
 
     @staticmethod
@@ -141,7 +147,7 @@ class MoySkladDBGood(models.Model):
         return True
 
     def __str__(self):
-        return f'{self.brewery} - {self.name}'
+        return f"{self.brewery} - {self.name}"
 
 
 class MoySkladDBStock(models.Model):

@@ -277,19 +277,26 @@ class Good(BaseModel):
     @staticmethod
     def _get_good_type(add_info: str = "") -> str:
         """Метод возвращает тип продукта пиво, сидр, комбуча, вырезанной из строки add_info."""
-        bev_type: GoodType = GoodType.OTHER
-        if add_info != "":
-            if "".join(GoodType.CIDER.value) in add_info.lower():
-                bev_type = GoodType.CIDER
-            elif "".join(GoodType.MEAD.value) in add_info.lower():
-                bev_type = GoodType.MEAD
-            elif "".join(GoodType.KOMBUCHA.value) in add_info.lower():
-                bev_type = GoodType.KOMBUCHA
-            elif "".join(GoodType.LEMONADE.value) in add_info.lower():
-                bev_type = GoodType.LEMONADE
-            else:
-                bev_type = GoodType.BEER
-        return "".join(bev_type.value)
+        # bev_type: GoodType = GoodType.OTHER
+        if add_info:
+            for type_ in GoodType:
+                if type_.value[0] in add_info.lower():
+                    return type_.value[0]
+            return type_.BEER.value[0]
+        return GoodType.OTHER.value[0]
+
+        #
+        #     if "".join(GoodType.CIDER.value[0]) in add_info.lower():
+        #         bev_type = GoodType.CIDER
+        #     elif "".join(GoodType.MEAD.value[0]) in add_info.lower():
+        #         bev_type = GoodType.MEAD
+        #     elif "".join(GoodType.KOMBUCHA.value[0]) in add_info.lower():
+        #         bev_type = GoodType.KOMBUCHA
+        #     elif "".join(GoodType.LEMONADE.value[0]) in add_info.lower():
+        #         bev_type = GoodType.LEMONADE
+        #     else:
+        #         bev_type = GoodType.BEER
+        # return "".join(bev_type.value)
 
     def parse_object(self) -> GoodTuple:
         """Метод возвращает объект типа GoodTuple."""
