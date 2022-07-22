@@ -185,6 +185,8 @@ class KonturMarketDBGood(models.Model):
         sales = sorted(sales, key=itemgetter("commercial_name"))
         return sales
 
+    def __str__(self):
+        return f"{self.full_name}: {self.egais_code}"
 
 class KonturMarketDBStock(models.Model):
     """Класс описывает модель остатка по товару в системе ЕГАИС."""

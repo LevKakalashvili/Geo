@@ -22,28 +22,28 @@ class AlcoListFilter(admin.SimpleListFilter):
         return queryset
 
 
+class MoySkladDBGoodKonturMarketDBGoodMatches(admin.TabularInline):
+    model = MoySkladDBGood.egais_code.through
+    extra = 0
+    verbose_name = "ЕГАИС наименование"
+    verbose_name_plural = "ЕГАИС наименования"
+    # raw_id_fields = ("full_name",)
+
+
 class MoySkladDBGoodAdmin(admin.ModelAdmin):
     list_display = ("brewery", "name", "uuid", "is_draft", "capacity")
     list_display_links = ("brewery", "name",)
     search_fields = ("brewery", "name",)
     list_filter = (AlcoListFilter,)
     ordering = ("brewery", "name")
+    inlines = [MoySkladDBGoodKonturMarketDBGoodMatches, ]
 
-    def changelist_view(self, request, extra_context=None):
-        if "HTTP_REFERER" in request.META:
-            test = request.META['HTTP_REFERER'].split(request.META['PATH_INFO'])
-
-        if test[-1] and not test[-1].startswith('?'):
-            if AlcoListFilter.parameter_name not in request.GET:
-                q = request.GET.copy()
-                q[AlcoListFilter.parameter_name] = AlcoListFilter.parameter_name
-                request.GET = q
-                request.META['QUERY_STRING'] = request.GET.urlencode()
-        return super(MoySkladDBGoodAdmin, self).changelist_view(request, extra_context=extra_context)
+    exclude = ("egais_code",)
 
 
 class KonturMarketDBGoodAdmin(admin.ModelAdmin):
-    pass
+    fields = ('full_name', 'egais_code')
+    inlines = [MoySkladDBGoodKonturMarketDBGoodMatches, ]
 
 
 admin.site.register(MoySkladDBGood, MoySkladDBGoodAdmin)
