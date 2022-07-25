@@ -24,10 +24,18 @@ class AlcoListFilter(admin.SimpleListFilter):
 
 class MoySkladDBGoodKonturMarketDBGoodMatches(admin.TabularInline):
     model = MoySkladDBGood.egais_code.through
-    extra = 0
+    extra = 1
     verbose_name = "ЕГАИС наименование"
     verbose_name_plural = "ЕГАИС наименования"
-    # raw_id_fields = ("full_name",)
+
+    readonly_fields = ['good_name']
+
+    template = "admin/Sync_app/edit_inline/tabular.html"
+
+    def good_name(self, instance):
+        return instance.konturmarketdbgood.full_name
+
+    good_name.short_description = "good_name"
 
 
 class MoySkladDBGoodAdmin(admin.ModelAdmin):
