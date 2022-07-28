@@ -1,5 +1,7 @@
 from django.contrib import admin
 from django.db.models import QuerySet
+from django.db import models
+from django.forms import TextInput, Textarea
 
 from Sync_app.models import MoySkladDBGood, KonturMarketDBGood
 
@@ -28,31 +30,30 @@ class MoySkladDBGoodKonturMarketDBGoodMatches(admin.TabularInline):
     verbose_name = "ЕГАИС наименование"
     verbose_name_plural = "ЕГАИС наименования"
 
-    readonly_fields = ['good_name']
-
-    template = "admin/Sync_app/edit_inline/tabular.html"
-
-    def good_name(self, instance):
-        return instance.konturmarketdbgood.full_name
-
-    good_name.short_description = "good_name"
-
 
 class MoySkladDBGoodAdmin(admin.ModelAdmin):
-    list_display = ("brewery", "name", "uuid", "is_draft", "capacity")
+    list_display = ("brewery", "name", "uuid", "is_draft", "capacity",)
     list_display_links = ("brewery", "name",)
     search_fields = ("brewery", "name",)
     list_filter = (AlcoListFilter,)
     ordering = ("brewery", "name")
-    inlines = [MoySkladDBGoodKonturMarketDBGoodMatches, ]
+    autocomplete_fields = ["egais_code"]
 
-    exclude = ("egais_code",)
+    # filter_vertical = ('egais_code',)
 
+    # class Media:
+    #     css = {
+    #         'all': ("css/resize_widget_filter_vertical.css",),
+    #     }
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super(MoySkladDBGoodAdmin, self).get_form(request, obj, **kwargs)
+        form.base_fields['egais_code'].widget.attrs['style'] = 'width: 100%;'
+        return form
 
 class KonturMarketDBGoodAdmin(admin.ModelAdmin):
     fields = ('full_name', 'egais_code')
-    inlines = [MoySkladDBGoodKonturMarketDBGoodMatches, ]
-
+    search_fields = ['egais_code']
 
 admin.site.register(MoySkladDBGood, MoySkladDBGoodAdmin)
 admin.site.register(KonturMarketDBGood, KonturMarketDBGoodAdmin)
