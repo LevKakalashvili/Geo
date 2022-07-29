@@ -18,8 +18,8 @@ class MoySkladDBGood(models.Model):
     class Meta:
         """Индексы и ограничения для таблицы."""
 
-        verbose_name = "МойСклад. Наименование товара"
-        verbose_name_plural = "МойСклад. Наименование товаров"
+        verbose_name = "Товар"
+        verbose_name_plural = "Товары"
 
         indexes = [
             models.Index(
@@ -52,17 +52,19 @@ class MoySkladDBGood(models.Model):
         max_length=36,
         unique=True,
         help_text="Уникальный идентификатор товара",
+        verbose_name="Идентификатор товара"
     )
     # Родительский UUID товара
     parent_uuid = models.CharField(
         max_length=36,
         help_text="Уникальный идентификатор родительского товара. " "Для модификация товаров",
+        verbose_name="Родительский товар (для модификаций)"
     )
     # Полное наименование товара.
     # Использовать нужно только для связки данных из КонтурМаркет
-    full_name = models.CharField(max_length=200, unique=True, help_text="Полное имя товара", verbose_name="ПОлное наименование")
+    full_name = models.CharField(max_length=200, unique=True, help_text="Полное имя товара", verbose_name="Полное наименование")
     # Путь, папка
-    path_name = models.CharField(max_length=100, help_text="Папка товара")
+    path_name = models.CharField(max_length=100, help_text="Папка товара", verbose_name="Каталог товара")
     # Стиль
     style = models.CharField(max_length=100, help_text="Стиль пива, если товар - пиво", verbose_name="Стиль")
     # Цена товара

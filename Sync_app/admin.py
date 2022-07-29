@@ -1,9 +1,7 @@
 from django.contrib import admin
 from django.db.models import QuerySet
-from django.db import models
-from django.forms import TextInput, Textarea
 
-from Sync_app.models import MoySkladDBGood, KonturMarketDBGood
+from Sync_app.models import MoySkladDBGood
 
 
 class AlcoListFilter(admin.SimpleListFilter):
@@ -24,36 +22,51 @@ class AlcoListFilter(admin.SimpleListFilter):
         return queryset
 
 
-class MoySkladDBGoodKonturMarketDBGoodMatches(admin.TabularInline):
-    model = MoySkladDBGood.egais_code.through
-    extra = 1
-    verbose_name = "ЕГАИС наименование"
-    verbose_name_plural = "ЕГАИС наименования"
-
-
 class MoySkladDBGoodAdmin(admin.ModelAdmin):
-    list_display = ("brewery", "name", "uuid", "is_draft", "capacity",)
-    list_display_links = ("brewery", "name",)
-    search_fields = ("brewery", "name",)
+    class Media:
+        css = {
+            "all": ("css/resize_widget_filter_vertical.css",),
+        }
+
+    list_display = (
+        "brewery",
+        "name",
+        "uuid",
+        "is_draft",
+        "capacity",
+    )
+    list_display_links = (
+        "brewery",
+        "name",
+    )
+    search_fields = (
+        "brewery",
+        "name",
+    )
     list_filter = (AlcoListFilter,)
     ordering = ("brewery", "name")
-    autocomplete_fields = ["egais_code"]
 
-    # filter_vertical = ('egais_code',)
+    save_on_top = True
 
-    # class Media:
-    #     css = {
-    #         'all': ("css/resize_widget_filter_vertical.css",),
-    #     }
+    readonly_fields = (
+        "uuid",
+        "parent_uuid",
+        "full_name",
+        "path_name",
+        "style",
+        "price",
+        "brewery",
+        "name",
+        "abv",
+        "og",
+        "ibu",
+        "is_alco",
+        "is_draft",
+        "bev_type",
+        "capacity",
+    )
 
-    def get_form(self, request, obj=None, **kwargs):
-        form = super(MoySkladDBGoodAdmin, self).get_form(request, obj, **kwargs)
-        form.base_fields['egais_code'].widget.attrs['style'] = 'width: 100%;'
-        return form
+    filter_vertical = ("egais_code",)
 
-class KonturMarketDBGoodAdmin(admin.ModelAdmin):
-    fields = ('full_name', 'egais_code')
-    search_fields = ['egais_code']
 
 admin.site.register(MoySkladDBGood, MoySkladDBGoodAdmin)
-admin.site.register(KonturMarketDBGood, KonturMarketDBGoodAdmin)

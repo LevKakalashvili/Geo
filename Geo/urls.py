@@ -16,8 +16,11 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
+admin.site.site_header = 'География'
+admin.site.index_title = f"{admin.site.site_header}. Администрирование"
+admin.site.site_title = admin.site.site_header
+
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('internal_services/', include("Sync_app.urls")),
     path('__debug__/', include('debug_toolbar.urls')),
 ]
