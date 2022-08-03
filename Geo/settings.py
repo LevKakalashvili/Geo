@@ -32,7 +32,7 @@ DEBUG = True
 if DEBUG:
     ALLOWED_HOSTS = []
 else:
-    ALLOWED_HOSTS = ["geobeer.ru", "geosarov.ru", "localhost"]
+    ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS"),
 
 # Application definition
 
