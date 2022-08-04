@@ -140,10 +140,10 @@ STATIC_URL = 'static/'
 
 if DEBUG:
     STATIC_DIR = os.path.join(BASE_DIR, 'Sync_app/static/')
-    STATICFILES_DIRS = [
-        STATIC_DIR,
-        '/var/www/Geo/Sync_app/static/',
-    ]
+    # STATICFILES_DIRS = [
+    #     STATIC_DIR,
+    #     '/var/www/Geo/Sync_app/static/',
+    # ]
 else:
     STATIC_ROOT = os.path.join(BASE_DIR, 'Sync_app/static/')
     STATICFILES_FINDERS = (
