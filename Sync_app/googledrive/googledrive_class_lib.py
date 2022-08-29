@@ -5,6 +5,7 @@ from typing import Any, List, NamedTuple
 
 import googleapiclient.discovery
 import httplib2
+from django.db.models import QuerySet
 from oauth2client.service_account import ServiceAccountCredentials
 
 import Sync_app.googledrive.googlesheets_constants as gs_const
@@ -61,15 +62,14 @@ class GoogleSheets:
             return []
 
         not_proceeded_good = []
-        # TODO: разобраться с QuerySet
-        # ms_db_good: QuerySet
+        ms_db_good: QuerySet
         km_db_good: km_model.KonturMarketDBGood
 
         for gs_row in googlesheets_copm_table:
             # Если в таблице соответствия из googlesheets, не установлено соответствие - второй элемент gs_good[1]
             # будет пустой, то пропускаем строку.
             if len(gs_row) > 1:
-                gs_good = CompilanceRow(commercial_name=gs_row[0], egais_code=gs_row[1])
+                gs_good = CompilanceRow(commercial_name=gs_row[0].strip(), egais_code=gs_row[1].strip())
 
                 # В googlesheets указывается только фасованная продукция и не указывается разливное пиво
                 km_db_good = km_model.KonturMarketDBGood.objects.get(egais_code=gs_good[1])
@@ -81,7 +81,7 @@ class GoogleSheets:
                 # 2.1 Barista Chocolate Quad
 
                 # Вариант 2:
-                ms_db_good = ms_model.MoySkladDBGood.objects.filter(name=gs_good.name).filter(is_draft=False)
+                ms_db_good = ms_model.MoySkladDBGood.objects.filter(name__iexact=gs_good.name).filter(is_draft=False)
                 if gs_good.brewery:
                     # Вариант 1:
                     ms_db_good = ms_db_good.filter(brewery=gs_good.brewery)
@@ -93,8 +93,7 @@ class GoogleSheets:
                 # Если в выборке из таблицы товаров для МойСклад нашлось товаров больше одного
                 elif len(ms_db_good) >= 2:
                     # Фильтруем по объему
-                    ms_db_good = [good for good in ms_db_good if good.capacity == km_db_good.capacity]
-
+                    ms_db_good = ms_db_good.filter(capacity__exact=km_db_good.capacity)
                     # Если опять нашлось более одного товара, исключаем запись из обработки
                     if len(ms_db_good):
                         # Если нашлись совпадения

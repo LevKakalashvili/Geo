@@ -50,3 +50,5 @@ pyvenv.cfg
  !**/migrations/__init__.py
 /Sync_app/privatedata/
 /venv/
+__pycache__
+/.env

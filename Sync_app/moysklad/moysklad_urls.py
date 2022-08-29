@@ -1,12 +1,15 @@
 """В модуле хранятся url'ы и функции, для доступа в сервис MoySklad https://www.moysklad.ru/ по API."""
 
 import base64
+import os
 from datetime import date
 from enum import Enum
 from typing import Any, Dict, NamedTuple, Optional
 from urllib.parse import urljoin
 
-import Sync_app.privatedata.moysklad_privatedata as ms_pvdata
+from dotenv import load_dotenv
+
+load_dotenv()
 
 JSON_URL = "https://online.moysklad.ru/api/remap/1.2/"  # ссылка для подключения к МС по JSON API 1.2
 BEER_FOLDER_ID = "8352f575-b4c1-11e7-7a34-5acf0009a77f"  # id папки "Пиво"
@@ -27,6 +30,7 @@ class UrlType(Enum):
     TOKEN = 1
     RETAIL_DEMAND = 2
     ASSORTMENT = 3
+    RETAIL_RETURN = 4
 
 
 class MoySkladUrl(NamedTuple):
@@ -51,7 +55,7 @@ def get_headers(token: str = "") -> Dict[str, Any]:
             "Authorization": "Bearer " + token,
         }
     else:
-        credentials = f"{ms_pvdata.USER}:{ms_pvdata.PASSWORD}"
+        credentials = f"{os.getenv('MOYSKLAD_USER')}:{os.getenv('MOYSKLAD_PASSWORD')}"
         headers = {"Authorization": f"Basic {base64.b64encode(credentials.encode()).decode('utf-8')}"}
     return headers
 
@@ -84,7 +88,7 @@ def get_url(
         url = MoySkladUrl(urljoin(JSON_URL, "security/token"), {})
 
     # если нужен url для запроса продаж
-    elif _type == UrlType.RETAIL_DEMAND:
+    elif _type == UrlType.RETAIL_DEMAND or _type == UrlType.RETAIL_RETURN:
         # если конец периода не указан входным параметром, считаем, что запросили продажи за вчера
         if start_period is None:
             start_period = date.today()
@@ -109,7 +113,14 @@ def get_url(
             "expand": "positions,positions.assortment",
             "limit": "100",
         }
-        url = MoySkladUrl(urljoin(JSON_URL, "entity/retaildemand"), request_filter)
+
+        if _type == UrlType.RETAIL_DEMAND:
+            entity = "retaildemand"
+        else:
+            entity = "retailsalesreturn"
+
+        url = MoySkladUrl(urljoin(JSON_URL, f"entity/{entity}"), request_filter)
+
     # # если нужен url для запроса ассортимента
     elif _type == UrlType.ASSORTMENT:
         request_filter = {

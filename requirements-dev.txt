@@ -1,32 +1,35 @@
 django-comment-migrate
 
-mypy>=0.931
-mypy-extensions>=0.4.3
-isort>=5.10.1
+mypy
+mypy-extensions
+isort
 
 flake8
 mccabe
-flake8-blind-except>=0.2.0
-flake8-broken-line>=0.4.0
-flake8-bugbear>=22.1.11
-flake8-builtins>=1.5.3
-flake8-class-attributes-order>=0.1.2
-flake8-cognitive-complexity>=0.1.0
-flake8-commas>=2.1.0
-flake8-comprehensions>=3.8.0
-flake8-debugger>=4.0.0
-flake8-eradicate>=1.2.0
-flake8-functions>=0.0.6
-flake8-isort>=4.1.1
+flake8-blind-except
+flake8-broken-line
+flake8-bugbear
+flake8-builtins
+flake8-class-attributes-order
+flake8-cognitive-complexity
+flake8-commas
+flake8-comprehensions
+flake8-debugger
+flake8-eradicate
+flake8-functions
+flake8-isort
 # flake8-mock>=0.3
-flake8-mutable>=1.2.0
-flake8-print>=4.0.0
-flake8-quotes>=3.3.1
-flake8-string-format>=0.3.0
-flake8-variables-names>=0.0.4
-flake8-docstrings>=1.6.0
+flake8-mutable
+flake8-print
+flake8-quotes
+flake8-string-format
+flake8-variables-names
+flake8-docstrings
 
 autopep8
 
 # https://black.readthedocs.io/en/stable/integrations/editors.html
 black
+types-requests
+django-extensions
+django-debug-toolbar

@@ -1,11 +1,11 @@
 """Модуль содержит описание моделей для работы с МойСклад."""
 from typing import TYPE_CHECKING, List
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models import CheckConstraint, Q
 from django.db.utils import IntegrityError
 
-import Sync_app.models.konturmarket_models as km_model
 import Sync_app.moysklad.moysklad_constants as ms_const
 
 if TYPE_CHECKING:
@@ -17,6 +17,9 @@ class MoySkladDBGood(models.Model):
 
     class Meta:
         """Индексы и ограничения для таблицы."""
+
+        verbose_name = "Товар"
+        verbose_name_plural = "Товары"
 
         indexes = [
             models.Index(
@@ -38,7 +41,7 @@ class MoySkladDBGood(models.Model):
 
         constraints = [
             CheckConstraint(
-                check=Q(bev_type__in=["".join(element.value) for element in ms_const.GoodType]),
+                check=Q(bev_type__in=[element.value[0] for element in ms_const.GoodType]),
                 name="valid_good_type",
             ),
         ]
@@ -49,45 +52,54 @@ class MoySkladDBGood(models.Model):
         max_length=36,
         unique=True,
         help_text="Уникальный идентификатор товара",
+        verbose_name="Идентификатор товара"
     )
     # Родительский UUID товара
     parent_uuid = models.CharField(
         max_length=36,
         help_text="Уникальный идентификатор родительского товара. " "Для модификация товаров",
+        verbose_name="Родительский товар (для модификаций)"
     )
     # Полное наименование товара.
     # Использовать нужно только для связки данных из КонтурМаркет
-    full_name = models.CharField(max_length=200, unique=True, help_text="Полное имя товара")
+    full_name = models.CharField(max_length=200, unique=True, help_text="Полное имя товара", verbose_name="Полное наименование")
     # Путь, папка
-    path_name = models.CharField(max_length=100, help_text="Папка товара")
+    path_name = models.CharField(max_length=100, help_text="Папка товара", verbose_name="Каталог товара")
     # Стиль
-    style = models.CharField(max_length=100, help_text="Стиль пива, если товар - пиво")
+    style = models.CharField(max_length=100, help_text="Стиль пива, если товар - пиво", verbose_name="Стиль")
     # Цена товара
-    price = models.DecimalField(max_digits=5, decimal_places=2, help_text="Цена товара")
+    price = models.DecimalField(max_digits=5, decimal_places=2, help_text="Цена товара", verbose_name="Цена")
     # Наименование пивоварни
-    brewery = models.CharField(max_length=100, help_text="Наименование пивоварни")
+    brewery = models.CharField(max_length=100, help_text="Наименование пивоварни", verbose_name="Пивоварня")
     # Наименование пива
-    name = models.CharField(max_length=100, help_text="Наименование товара")
+    name = models.CharField(max_length=100, help_text="Наименование товара", verbose_name="Наименование")
     # Содержание алкоголя
-    abv = models.FloatField(help_text="Содержание алкоголя")
+    abv = models.FloatField(help_text="Содержание алкоголя", verbose_name="Алкоголь")
     # Плотность
-    og = models.FloatField(help_text="Начальная плотность")
+    og = models.FloatField(help_text="Начальная плотность", verbose_name="Плотность")
     # Горечь
-    ibu = models.PositiveSmallIntegerField(help_text="Горечь")
+    ibu = models.PositiveSmallIntegerField(help_text="Горечь", verbose_name="Горечь")
     # Признак алкогольной продукции
-    is_alco = models.BooleanField(help_text="Признак алкогольного напитка", default=False)
+    is_alco = models.BooleanField(help_text="Признак алкогольного напитка", default=False, verbose_name="Алкогольная продукция")
     # Признак разливного пива
-    is_draft = models.BooleanField(help_text="Признак разливного пива", default=False)
+    is_draft = models.BooleanField(help_text="Признак разливного пива", default=False, verbose_name="Розлив")
     # Тип продукта (пиво, сидр, медовуха, комбуча, лимонад)
     bev_type = models.CharField(
         max_length=8,
-        choices=[("".join(element.value), "".join(element.value)) for element in ms_const.GoodType],
+        # choices=[("".join(element.value), "".join(element.value)) for element in ms_const.GoodType],
+        choices=[element.value for element in ms_const.GoodType],
         help_text="Тип продукта",
+        verbose_name="Тип",
     )
     # Емкость тары
-    capacity = models.DecimalField(max_digits=5, decimal_places=3, help_text="Емкость тары")
+    capacity = models.DecimalField(max_digits=5, decimal_places=3, help_text="Емкость тары", verbose_name="Объём")
     # Код ЕГАИС
-    egais_code = models.ManyToManyField(km_model.KonturMarketDBGood, help_text="Код алкогольной продукции")
+    egais_code = models.ManyToManyField(
+        "KonturMarketDBGood",
+        help_text="Код алкогольной продукции",
+        related_name="goods",
+        verbose_name="ЕГАИС код",
+    )
 
     @staticmethod
     def save_objects_to_db(list_ms_goods: List["ms_class.Good"]) -> bool:
@@ -126,15 +138,18 @@ class MoySkladDBGood(models.Model):
                 # Если по какой-то причине остаток товара в МойСклад отрицательный в БД сохраняем 0
                 quantity=ms_good.quantity if ms_good.quantity >= 0 else 0,
             )
-            # Сохраняем товары в таблицу
-            # Сохраняем остатки в таблицу
             try:
+                # Сохраняем товары в таблицу
                 good.save()
+                # Сохраняем остатки в таблицу
                 stocks.save()
             except IntegrityError as error:
-                # TODO: переделать на логгер
+                # TODO: переделать на логгер или Sentry
                 print(f"\nWARNING! {error.args[1]}")
         return True
+
+    def __str__(self):
+        return f"{self.brewery} - {self.name}"
 
 
 class MoySkladDBStock(models.Model):
@@ -148,4 +163,50 @@ class MoySkladDBStock(models.Model):
         on_delete=models.CASCADE,
         primary_key=True,
         help_text="Уникальный идентификатор товара",
+        db_column="uuid",
     )
+
+
+class MoySkladDBRetailDemand(models.Model):
+    """Класс описывает модель розничной продажи продаж."""
+
+    # Дата продажи
+    demand_date = models.DateField(null=True, blank=True, default=None, help_text="Дата продажи")
+
+    # Количество проданного товара
+    quantity = models.PositiveSmallIntegerField(help_text="Остаток товара на складе")
+
+    # UUID проданного товара
+    uuid = models.ForeignKey(
+        MoySkladDBGood,
+        help_text="Идентификатор проданного товара",
+        on_delete=models.DO_NOTHING,
+        db_column="uuid",
+    )
+
+    @staticmethod
+    def save_objects_to_db(list_retail_demand: List["ms_class.RetailDemandPosition"]) -> bool:
+        """Метод сохраняет объекты, созданные на основе списка list_retail_demand в БД."""
+        if not list_retail_demand:
+            return False
+
+        # Получаем список всех проданного пива
+        sold_goods = MoySkladDBGood.objects.filter(uuid__in=[_.good_id for _ in list_retail_demand])
+        # Чистим таблицу
+        MoySkladDBRetailDemand.objects.all().delete()
+        save_list: List[MoySkladDBRetailDemand] = []
+        # Сохраняем проданные товары
+        for good in list_retail_demand:
+            try:
+                save_list.append(
+                    MoySkladDBRetailDemand(
+                        uuid=sold_goods.get(uuid=good.good_id),
+                        quantity=good.quantity,
+                        demand_date=good.demand_date,
+                    ),
+                )
+            except ObjectDoesNotExist:
+                continue
+        # Сохраняем продажи в БД
+        MoySkladDBRetailDemand.objects.bulk_create(save_list)
+        return True
